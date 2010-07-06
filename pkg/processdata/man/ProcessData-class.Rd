@@ -18,7 +18,10 @@
 
 An object of class \code{ProcessData} combines continuous 
 process data and marked point process data into a single, 
-coherent object. 
+coherent object. Note that whether this is meaningful is up to
+the user -- it assumes a common time/position axis. One important
+gain is consistent subsetting behavior across the two different
+data types. 
 
 }
 \section{Objects from the Class}{
