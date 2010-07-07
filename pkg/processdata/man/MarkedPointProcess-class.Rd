@@ -60,7 +60,7 @@ special treatment but any type of mark value is possible.
       Converts the object of class \code{MarkedPointProcess} to an
       object of class \code{\linkS4class{ContinuousProcess}}.}
     \item{plot}{\code{signature(x = "MarkedPointProcess", y =
-	"missing")}: Plots the data.}
+	"missing",usedLayer=geom_point())}: Plots the data.}
     \item{subset}{\code{signature(x = "MarkedPointProcess")}: Selects a
       subset of the full data set by either specifying a vector of
       logicals or an expression in terms of \code{id}, \code{position}
