@@ -85,14 +85,17 @@ setMethod("getPlotData","MarkedPointProcess",
           )
 
 setMethod("plot",signature(x="MarkedPointProcess",y="missing"),
-          function(x,y,...){
+          function(x,y,usedLayer=geom_point(),...){
+            
             plotData <- getPlotData(x,...)
             
-            ggplot(data=plotData,aes(x=position,y=type,colour=type)) +
-                   geom_point() +
-                     scale_colour_discrete(breaks=levels(plotData$type)) +
-                       scale_y_discrete(limits=levels(plotData$type)) + 
-                         facet_grid(id ~ .)
+            p <- ggplot(data=plotData,aes(x=position,y=type,colour=type)) +
+              scale_colour_discrete(breaks=levels(plotData$type)) +
+                scale_y_discrete(limits=levels(plotData$type)) + 
+                  facet_grid(id ~ .)
+            if(!is.null(usedLayer)) p <- p + usedLayer
+
+            return(p)
           }
           )
                  
