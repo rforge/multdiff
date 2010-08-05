@@ -5,7 +5,7 @@ Version: 0.1
 Date: 2010-08-04
 Author: Nina Munkholt	
 Maintainer: Nina Munkholt <nina.m@math.ku.dk>
-Depends: processdata
+Depends: processdata, methods
 Description: Estimation of high dimensional, discretely observed
 	     diffusions using a strategy which yields a sparse representation of
 	     the drift term. 
