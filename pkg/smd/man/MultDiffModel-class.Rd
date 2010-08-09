@@ -7,6 +7,7 @@
 
   \code{MultDiffModel} is a virtual class which represents a
   multivariate diffusion model.
+  
 }
 \section{Objects from the Class}{A virtual Class: No objects may be created from it.}
 \section{Slots}{
@@ -17,7 +18,6 @@
 \section{Methods}{
 No methods defined with class "MultDiffModel" in the signature.
 }
-%\references{}
 \author{
 Nina Munkholt, \email{nina.m@math.ku.dk}
 }
