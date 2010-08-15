@@ -1,6 +1,10 @@
 \name{MultDiffModel-class}
 \docType{class}
 \alias{MultDiffModel-class}
+\alias{getData}
+\alias{getData,MultDiffModel-method}
+\alias{getParameters}
+\alias{getParameters,MultDiffModel-method}
 
 \title{Class "MultDiffModel"}
 \description{
@@ -13,13 +17,24 @@
 \section{Slots}{
   \describe{
     \item{\code{data}:}{Object of class \code{"ContinuousProcess"}}
+    \item{\code{parameters}:}{Object of class \code{"list"}}
   }
 }
 \section{Methods}{
-No methods defined with class "MultDiffModel" in the signature.
+  \describe{
+    \item{getData}{\code{signature(object = "MultDiffModel")}: Returns
+      the data object of class \code{"ContinuousProcess"} used to
+      estimate the model. }
+    \item{getParameters}{\code{signature(object = "MultDiffModel")}:
+      Returns the parameters of the model. }
+	 }
 }
 \author{
-Nina Munkholt, \email{nina.m@math.ku.dk}
+  Nina Munkholt, \email{nina.m@math.ku.dk}
+  
+}
+\seealso{
+  \code{\linkS4class{OUModel}} 
 }
 \examples{
 showClass("MultDiffModel")

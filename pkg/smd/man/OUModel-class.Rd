@@ -1,6 +1,8 @@
 \name{OUModel-class}
 \docType{class}
 \alias{OUModel-class}
+\alias{condMeanVar}
+\alias{condMeanVar,OUModel-method}
 
 \title{Class "OUModel"}
 \description{
@@ -43,7 +45,9 @@
 Class \code{"\linkS4class{MultDiffModel}"}, directly.
 }
 \section{Methods}{
-No methods defined with class "OUModel" in the signature.
+  \describe{
+    \item{condMeanVar}{\code{signature(object = "OUModel")}: Computes
+      the conditional mean and covariance matrix of the model.}}
 }
 %\references{}
 \author{Nina Munkholt, \email{nina.m@math.ku.dk}}
