@@ -1,8 +1,12 @@
 \name{OUModel-class}
 \docType{class}
 \alias{OUModel-class}
+\alias{condMeanVarFct}
+\alias{condMeanVarFct,OUModel-method}
 \alias{condMeanVar}
 \alias{condMeanVar,OUModel-method}
+
+%% Explain alpha, beta, Sigma
 
 \title{Class "OUModel"}
 \description{
@@ -47,7 +51,9 @@ Class \code{"\linkS4class{MultDiffModel}"}, directly.
 \section{Methods}{
   \describe{
     \item{condMeanVar}{\code{signature(object = "OUModel")}: Computes
-      the conditional mean and covariance matrix of the model.}}
+      the conditional mean and covariance matrix of the model.}
+  \item{condMeanVarFct}{\code{signature(object = "OUModel")}: Computes
+      alpha, beta and Sigma.}}
 }
 %\references{}
 \author{Nina Munkholt, \email{nina.m@math.ku.dk}}

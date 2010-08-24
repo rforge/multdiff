@@ -5,6 +5,9 @@
 \alias{getData,MultDiffModel-method}
 \alias{getParameters}
 \alias{getParameters,MultDiffModel-method}
+\alias{loss}
+\alias{loss,MultDiffModel-method}
+
 
 \title{Class "MultDiffModel"}
 \description{
@@ -27,6 +30,8 @@
       estimate the model. }
     \item{getParameters}{\code{signature(object = "MultDiffModel")}:
       Returns the parameters of the model. }
+    \item{loss}{\code{signature(object = "MultDiffModel")}:
+      Computes the loss   }
 	 }
 }
 \author{
