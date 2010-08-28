@@ -29,18 +29,19 @@ setMethod(
 setMethod(
           "loss",
           "MultDiffModel",
-          function(object, type){
+          function(object, parameters, type){
             data <- as.matrix(getValue(object@data))
             if (length(data)==0)
               stop("'object' must contain data")
-            parameters <- object@parameters
+            if (missing(parameters))
+              {parameters <- object@parameters}
             pos <- getPosition(object@data)
             n <- length(pos)
             p <- dim(parameters$A)[1]
             delta <- pos[2:n]-pos[1:(n-1)]
 
             tmpData <- data[1:(n-1),]
-            tmp <- condMeanVar(object=object,x=tmpData,t=delta)
+            tmp <- condMeanVar(object=object,parameters=parameters,x=tmpData,t=delta)
             tmpMean <- t(sapply(tmp$condMean,function(y){return(y)}))
             tmpVar <- t(sapply(tmp$condVar,function(y){return(y)}))
             centeredObs <- data[2:n,]-tmpMean
@@ -78,48 +79,15 @@ setMethod(
           }
           )
 
-
-#setMethod(
-#          "loss",
-#          "MultDiffModel",
-#          function(object, type){
-#            data <- as.matrix(getValue(object@data))
-#            if (length(data)==0)
-#              stop("'object' must contain data")
-#            parameters <- object@parameters
-#            pos <- getPosition(object@data)
-#            n <- length(pos)
-#            p <- dim(parameters$A)[1]
-#            delta <- pos[2:n]-pos[1:(n-1)]
-#
-#            tmpData <- cbind(data[1:(n-1),],delta)
-#            tmp <- apply(tmpData,1,function(y)
-#                         {
-#                           condMeanVar(object,y[1:p],y[p+1])
-#                         }
-#                         )
-#              
-#            tmpMean <- t(sapply(tmp,function(y){y$condMean}))
-#            tmpVar <- sapply(tmp,function(y){y$condVar})
-                        #condMean <- t(sapply(1:n,function(y)
-            #                     {
-            #                       tmp <- tmpFunctions[[f[y]]]
-            #                       tmp <- tmp$alpha + tmp$beta %*% t(x[y,,drop=FALSE])
-            #                       return(tmp)
-            #                     }
-            #                     )
-            #              )
-            #tmpVar <- matrix(sapply(tmp,function(x){x$condVar})[,2],nrow=4)
- #           centObs <- data[2:n,]-tmpMean
-
-#
-#            if (type = "type1"){
-#              print(sum((centObs)^2)/2)
-#            }
-#
-#            if (type = "type2"){
-#              diff
-#   }
-#            
+#setMethod("fitMultDiffModel",
+#          "ContinuousProcess",
+#          function(object,modelClass,lossType){
+#            if(modelClass == "OUModel" && lossType == 1)
+#              {
+#                
+#                
 #          }
-#          )
+            
+          
+
+
