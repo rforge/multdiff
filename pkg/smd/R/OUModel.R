@@ -138,12 +138,13 @@ setMethod("parToList",
             p <- (-1+sqrt(1+8*L))/4
             if (abs(p-round(p)!=0))
               stop("Error in length of 'x'")
-            tmp <- list(
+            parameters <- list(
                         A = matrix(x[1:p]),
                         B = matrix(x[p+1:(p+p*p)],nrow=p,ncol=p),
                         C = matrix(x[(p+p*p+1):(2*p*p+p)], ncol=p,nrow=p)
                         )
-            return(tmp)
+            validateParameters(object,parameters)
+            return(parameters)
           }
           )       
             
