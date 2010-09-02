@@ -1,3 +1,4 @@
+### Begin: OUModel-class
 
 setClass(
          Class = "OUModel",
@@ -34,13 +35,16 @@ setClass(
          }
        )
 
+### End: OUModel-class
 
+
+### Begin: condMeanVar function
 
 setMethod(
           "condMeanVar",
           "OUModel",
-          function(object,parameters,x,t){
-            if(missing(parameters))
+          function(object,parameters,x,t,var=FALSE){
+            if (missing(parameters))
               {parameters <- object@parameters}
             p <- dim(parameters$A)[1]
             if (!is.matrix(x))
@@ -49,50 +53,62 @@ setMethod(
               stop("Mismatch in dimensions of 'x' and parameters of 'object'")
             if (dim(x)[1] != length(t))
               stop("Mismatch in dimensions of 'x' and 't'")
-            n <- length(t)
-            f <- factor(t)
-            tmpData <- cbind(x,t,f)
-            tUnique <- sort(unique(t))
-            tmpFunctions <- lapply(tUnique,function(y){
-              X <- matrix(,nrow = 2*p+1, ncol=2*p+1)
-              X[1:p,] <- cbind(-parameters$B,parameters$A,parameters$C)
-              X[p+1,] <- rep(0,2*p+1)
-              X[(p+2):(2*p+1),] <- cbind(matrix(rep(0,p*(p+1)),nrow=p,ncol=p+1),t(parameters$B))
-              exptX <- expm(y*X)
-              G1 <- exptX[1:p,(p+1),drop=FALSE]
-              H1 <- exptX[1:p,(p+2):(2*p+1)]
-              F3 <- exptX[(p+2):(2*p+1),(p+2):(2*p+1)]
-              alpha <- t(F3)%*%G1
-              beta <- t(F3)
-              Sigma <- t(F3)%*%H1
-              tmp <- list(
-                          alpha = alpha,
-                          beta = beta,
-                          Sigma = Sigma
-                          )
-              return(tmp)
-            }
-                                   )
-            condMean <- lapply(1:n,function(y)
-                                 {
-                                   tmp <- tmpFunctions[[f[y]]]$alpha + tmpFunctions[[f[y]]]$beta %*% t(x[y,,drop=FALSE])
-                                   return(tmp)
-                                 }
-                                 )
-            condVar <- lapply(1:n,function(y)
-                              {
-                                tmp <- tmpFunctions[[f[y]]]$Sigma
-                                return(tmp)
-                              }
-                              )
-            tmp <- list(
-                        condMean = condMean,
-                        condVar = condVar
-                        )
-            return(tmp)
-          }
-          )
+            if (!is.logical(var))
+              stop("'var' must be logical")
+            if (var==FALSE)
+              {
+                tmpMean <- apply(cbind(x,t),1,function(y){
+                  parameters$A + expm(y[p+1]*parameters$B)%*%(matrix(y[1:p])-parameters$A)
+                }
+                    )
+                return(list(condMean = unname(split(tmpMean, col(tmpMean)))))
+              }
+            if (var==TRUE)
+              {
+                n <- length(t)
+                f <- factor(t)
+                tUnique <- sort(unique(t))
+                X <- matrix(,nrow = 2*p+1, ncol = 2*p+1)
+                X[1:p,] <- cbind(-parameters$B,-parameters$B%*%parameters$A,parameters$C)
+                X[p+1,] <- rep(0,2*p+1)
+                X[(p+2):(2*p+1),] <- cbind(matrix(rep(0,p*(p+1)),nrow=p,ncol=p+1),t(parameters$B))
+                tmpFunctions <- lapply(tUnique,function(y)
+                                       {exptX <- expm(y*X)
+                                        G1 <- exptX[1:p,(p+1),drop=FALSE]
+                                        H1 <- exptX[1:p,(p+2):(2*p+1)]
+                                        F3 <- exptX[(p+2):(2*p+1),(p+2):(2*p+1)]
+                                        tmp <- list(
+                                                    alpha = t(F3)%*%G1,
+                                                    beta = t(F3),
+                                                    Sigma = t(F3)%*%H1
+                                                    )
+                                        return(tmp)
+                                        }
+                                       )
+                tmpMean <- apply(cbind(x,f),1,function(y)
+                                  {
+                                    tmpFunctions[[y[p+1]]]$alpha + tmpFunctions[[y[p+1]]]$beta %*% matrix(y[1:p])
+                                  }
+                                  )
+                condVar <- lapply(f,function(y)
+                                  {
+                                    tmpFunctions[[y]]$Sigma
+                                  }
+                                  )
 
+                return(list(
+                            condMean = unname(split(tmpMean, col(tmpMean))),
+                            condVar = condVar
+                            ))
+              }
+          }
+          )      
+
+### End: condMeanVar function
+
+
+
+### Begin: Functions to do with parameters
            
             
 setMethod("validateParameters",
@@ -119,7 +135,7 @@ setMethod("validateParameters",
             }
           }
           )
-            
+
 
 setMethod("parToNumeric",
           "OUModel",
@@ -148,3 +164,6 @@ setMethod("parToList",
           }
           )       
             
+
+### End: functions to do with parameters
+

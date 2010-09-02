@@ -1,4 +1,6 @@
 
+### Begin: MultDiffModel
+
 setClass(
          Class = "MultDiffModel",
          representation = representation(
@@ -26,10 +28,15 @@ setMethod(
           }
           )
 
+
+### End: MultDiffModel-class
+
+### Begin: Loss function (NB!!!! OLD!!!! Will be changed!!!)
+
 setMethod(
           "loss",
           "MultDiffModel",
-          function(object, parameters, type){
+          function(object, parameters, lossType){
             data <- as.matrix(getValue(object@data))
             if (length(data)==0)
               stop("'object' must contain data")
@@ -45,11 +52,11 @@ setMethod(
             tmpMean <- t(sapply(tmp$condMean,function(y){return(y)}))
             tmpVar <- t(sapply(tmp$condVar,function(y){return(y)}))
             centeredObs <- data[2:n,]-tmpMean
-            if (type == 1)
+            if (lossType == 1)
               {
                 return(sum((centeredObs)^2)/2)
               }
-           if (type == 2)
+           if (lossType == 2)
              {
                tmpData <- cbind(centeredObs,tmpVar)
                wCenteredObs <- t(apply(tmpData,1,function(y)
@@ -79,15 +86,28 @@ setMethod(
           }
           )
 
+### End: Loss function
+
+
 #setMethod("fitMultDiffModel",
 #          "ContinuousProcess",
 #          function(object,modelClass,lossType){
-#            if(modelClass == "OUModel" && lossType == 1)
-#              {
+#            if(modelClass == "OUModel" && lossType == 1){
+#              model <- new("OUModel", data=object)
+#              p <- dim(getValue(object))[2]
+#              
+#              
+#              l <- function(x){
+#                loss(model,parToList(model,c(x,as.numeric(diag(1,p)))),lossType)+lambda*sum(abs(x))
+#              }
+#
+#              L <- function(y){
+#                loss(model,parToList(model,c(x,as.numeric(diag
+#
+#              optim(0,
+#                optim(rep(1,p+p*p),fn=l)
+#              
 #                
-#                
-#          }
-            
-          
-
-
+#              }}}
+#          )
+              
