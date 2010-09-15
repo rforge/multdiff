@@ -107,6 +107,52 @@ setMethod(
 ### End: condMeanVar function
 
 
+### Begin: Gradient
+
+setMethod("gradient",
+          "OUModel",
+          function(object,parameters,lossType){
+            data <- as.matrix(getValue(object@data))
+            if (length(data)==0)
+              stop("'object' must contain 'data'")
+            if (missing(parameters))
+              {parameters <- object@parameters}
+            pos <- getPosition(object@data)
+            n <- length(pos)
+            p <- dim(parameters$A)[1]
+            delta <- pos[2:n]-pos[1:(n-1)]
+            tmpMean <- do.call(rbind,condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
+            centeredObs <- data[2:n,]-tmpMean
+            if (lossType==1){
+              if (unique(delta)!=1){
+                diffExpm <- t(apply(cbind(data[2:n,],centeredObs,delta),1,function(y){
+                  E <- (matrix(y[1:p])-parameters$A)%*%matrix(y[(p+1):(2*p)], nrow=1)
+                  return(expmFrechet(y[2*p+1]*parameters$B,y[2*p+1]*E)$Lexpm)
+                  }
+                                    )
+                              )
+                B <- -t(matrix(matrix(rep(1,n-1),nrow=1)%*%diffExpm, nrow=p))
+                A <- -apply(cbind(data[2:n,],centeredObs,delta),1,function(y){
+                  (diag(1,p)-expm(y[2*p+1]*t(parameters$B)))%*%matrix(y[(p+1):(2*p)])})%*%matrix(rep(1,n-1))
+                print(list(A = A, B=B))
+                }
+              else {
+                tmpE <- apply(cbind(data[2:n,],centeredObs),1,function(y){
+                  (matrix(y[1:p])-parameters$A)%*%matrix(y[(p+1):(2*p)],nrow=1)
+                  }
+                              )
+                E <- matrix(tmpE%*%matrix(rep(1,n-1)),nrow=p)
+                B <- -t(expmFrechet(delta[1]*parameters$B,delta[1]*E)$Lexpm)
+                A <- -(diag(1,p)-expm(delta[1]*t(parameters$B)))%*%t(matrix(rep(1,n-1),nrow=1)%*%centeredObs)
+                print(list(A = A, B=B))
+                }
+              }
+            }
+          )
+          
+
+### End: Gradient
+
 
 ### Begin: Functions to do with parameters
            
@@ -114,25 +160,27 @@ setMethod(
 setMethod("validateParameters",
           "OUModel",
           function(object,parameters){
-            if (length(parameters)!=0){
-              if ( (length(parameters)!=3) || (sum(c("A","B","C") %in% names(parameters))!=3) )
-                stop("'parameters' must be a list with three components 'A', 'B' and 'C'")
-              if ( (!is.matrix(parameters$A)) || (!is.matrix(parameters$B)) || (!is.matrix(parameters$C)) )
-                stop("'A', 'B' and 'C' must all be of class 'matrix'")
-              if (dim(parameters$A)[2] != 1)
-                stop("'A' must be a one-column matrix'")
-              if (dim(parameters$B)[1] != dim(parameters$B)[2])
-                stop("'B' must be a square matrix'")
-              if (dim(parameters$C)[1] != dim(parameters$C)[2])
-                stop("'C' must be a square matrix'")
-              if ((dim(parameters$A)[1] != dim(parameters$B)[1]) || (dim(parameters$A)[1] != dim(parameters$C)[1]))
-               stop("Mismatch in dimensions of 'A', 'B' and 'C'")
-              if (!identical(parameters$C,t(parameters$C)))
-                stop("'C' must be symmetric")
-              if (!isTRUE(all.equal(min(eigen(parameters$C,only.values = TRUE, symmetric = TRUE)$values,0),0)))
-                stop("'C' must be positive semidefinite")
-              return(TRUE)
-            }
+            if (missing(parameters))
+              {parameters <- object@parameters}
+            if (length(parameters)==0)
+              stop("'object' must contain 'parameters' or 'parameters' must be specified")
+            if ( (length(parameters)!=3) || (sum(c("A","B","C") %in% names(parameters))!=3) )
+              stop("'parameters' must be a list with three components 'A', 'B' and 'C'")
+            if ( (!is.matrix(parameters$A)) || (!is.matrix(parameters$B)) || (!is.matrix(parameters$C)) )
+              stop("'A', 'B' and 'C' must all be of class 'matrix'")
+            if (dim(parameters$A)[2] != 1)
+              stop("'A' must be a one-column matrix'")
+            if (dim(parameters$B)[1] != dim(parameters$B)[2])
+              stop("'B' must be a square matrix'")
+            if (dim(parameters$C)[1] != dim(parameters$C)[2])
+              stop("'C' must be a square matrix'")
+            if ((dim(parameters$A)[1] != dim(parameters$B)[1]) || (dim(parameters$A)[1] != dim(parameters$C)[1]))
+              stop("Mismatch in dimensions of 'A', 'B' and 'C'")
+            if (!identical(parameters$C,t(parameters$C)))
+              stop("'C' must be symmetric")
+            if (!isTRUE(all.equal(min(eigen(parameters$C,only.values = TRUE, symmetric = TRUE)$values,0),0)))
+              stop("'C' must be positive semidefinite")
+            return(TRUE)
           }
           )
 
@@ -142,7 +190,7 @@ setMethod("parToNumeric",
           function(object,parameters){
             if (missing(parameters))
               {parameters <- object@parameters}
-            validateParameters(object,parameters)
+            #validateParameters(object,parameters)
             return(as.numeric(cbind(parameters$A,parameters$B,parameters$C)))
           }
           )
@@ -159,7 +207,7 @@ setMethod("parToList",
                         B = matrix(x[p+1:(p+p*p)],nrow=p,ncol=p),
                         C = matrix(x[(p+p*p+1):(2*p*p+p)], ncol=p,nrow=p)
                         )
-            validateParameters(object,parameters)
+            #validateParameters(object,parameters)
             return(parameters)
           }
           )       

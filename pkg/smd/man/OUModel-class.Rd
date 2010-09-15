@@ -9,6 +9,8 @@
 \alias{parToList,OUModel-method}
 \alias{parToNumeric}
 \alias{parToNumeric,OUModel-method}
+\alias{gradient}
+\alias{gradient,OUModel-method}
 
 %% Explain alpha, beta, Sigma
 

@@ -31,7 +31,7 @@ setMethod(
 
 ### End: MultDiffModel-class
 
-### Begin: Loss function (NB!!!! OLD!!!! Will be changed!!!)
+### Begin: Loss function
 
 setMethod(
           "loss",
@@ -39,54 +39,50 @@ setMethod(
           function(object, parameters, lossType){
             data <- as.matrix(getValue(object@data))
             if (length(data)==0)
-              stop("'object' must contain data")
+              stop("'object' must contain 'data'")
             if (missing(parameters))
               {parameters <- object@parameters}
+            #validateParameters(object,parameters)
             pos <- getPosition(object@data)
             n <- length(pos)
             p <- dim(parameters$A)[1]
             delta <- pos[2:n]-pos[1:(n-1)]
-
-            tmpData <- data[1:(n-1),]
-            tmp <- condMeanVar(object=object,parameters=parameters,x=tmpData,t=delta)
-            tmpMean <- t(sapply(tmp$condMean,function(y){return(y)}))
-            tmpVar <- t(sapply(tmp$condVar,function(y){return(y)}))
-            centeredObs <- data[2:n,]-tmpMean
             if (lossType == 1)
               {
-                return(sum((centeredObs)^2)/2)
+                tmpMean <- do.call(rbind,condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
+                return(sum((data[2:n,]-tmpMean)^2)/2)
               }
-           if (lossType == 2)
-             {
-               tmpData <- cbind(centeredObs,tmpVar)
-               wCenteredObs <- t(apply(tmpData,1,function(y)
-                                     {
-                                       solve(matrix(y[(p+1):((p+1)*p)],nrow=p),matrix(y[1:p]))
-                                     }
-                                     )
+            if (lossType == 2)
+              {
+                tmpMeanVar <- condMeanVar(object, parameters, x=data[1:(n-1),], t=delta,var=TRUE)
+                tmpMean <- do.call(rbind,tmpMeanVar$condMean)
+                tmpVar <- t(sapply(tmpMeanVar$condVar,function(y){return(y)}))
+                centeredObs <- data[2:n,]-tmpMean
+                wCenteredObs <- t(apply(cbind(tmpVar,centeredObs),1,function(y){
+                  solve(matrix(y[1:(p*p)],nrow=p,ncol=p),matrix(y[(p*p+1):(p*(p+1))]))
+                }
+                                        )
+                                  )
+                firstSum <- sum(
+                                apply(cbind(centeredObs,wCenteredObs),1,function(y){
+                                  matrix(y[1:p],nrow=1)%*%matrix(y[(p+1):(2*p)])
+                                }
+                                      )
+                                )
+                secondSum <- sum(apply(tmpVar,1,function(y){
+                  log(det(matrix(y,nrow=p,ncol=p)))
+                }
+                                       )
                                  )
-               tmpData <- cbind(centeredObs,wCenteredObs)
-               theSum <- sum(
-                             apply(tmpData,1,function(y)
-                                   {
-                                     matrix(y[1:p],nrow=1)%*%matrix(y[(p+1):(2*p)])
-                                   }
-                                   )
-                             )
-               logDet <- sum(apply(tmpVar,1,function(y)
-                               {
-                                 log(det(matrix(y,nrow=p)))
-                               }
-                               )
-                             )
-               return((theSum+logDet)/2)
-               
-
-             }
+                return((firstSum + secondSum)/2)
+              }
           }
           )
+            
+            
 
-### End: Loss function
+
+### end: Loss function
 
 
 #setMethod("fitMultDiffModel",
