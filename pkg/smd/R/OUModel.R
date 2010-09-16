@@ -111,7 +111,7 @@ setMethod(
 
 setMethod("gradient",
           "OUModel",
-          function(object,parameters,lossType){
+          function(object,parameters,lossType,showResult=TRUE){
             data <- as.matrix(getValue(object@data))
             if (length(data)==0)
               stop("'object' must contain 'data'")
@@ -124,7 +124,7 @@ setMethod("gradient",
             tmpMean <- do.call(rbind,condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
             centeredObs <- data[2:n,]-tmpMean
             if (lossType==1){
-              if (unique(delta)!=1){
+              if (length(unique(delta))!=1){
                 diffExpm <- t(apply(cbind(data[2:n,],centeredObs,delta),1,function(y){
                   E <- (matrix(y[1:p])-parameters$A)%*%matrix(y[(p+1):(2*p)], nrow=1)
                   return(expmFrechet(y[2*p+1]*parameters$B,y[2*p+1]*E)$Lexpm)
@@ -134,7 +134,10 @@ setMethod("gradient",
                 B <- -t(matrix(matrix(rep(1,n-1),nrow=1)%*%diffExpm, nrow=p))
                 A <- -apply(cbind(data[2:n,],centeredObs,delta),1,function(y){
                   (diag(1,p)-expm(y[2*p+1]*t(parameters$B)))%*%matrix(y[(p+1):(2*p)])})%*%matrix(rep(1,n-1))
-                print(list(A = A, B=B))
+                if (showResult==TRUE)
+                  {print(list(A=A,B=B))}
+                else
+                  {invisible(list(A=A, B=B))}
                 }
               else {
                 tmpE <- apply(cbind(data[2:n,],centeredObs),1,function(y){
@@ -144,7 +147,10 @@ setMethod("gradient",
                 E <- matrix(tmpE%*%matrix(rep(1,n-1)),nrow=p)
                 B <- -t(expmFrechet(delta[1]*parameters$B,delta[1]*E)$Lexpm)
                 A <- -(diag(1,p)-expm(delta[1]*t(parameters$B)))%*%t(matrix(rep(1,n-1),nrow=1)%*%centeredObs)
-                print(list(A = A, B=B))
+                if (showResult==TRUE)
+                  {print(list(A=A,B=B))}
+                else
+                  {invisible(list(A = A, B=B))}
                 }
               }
             }
