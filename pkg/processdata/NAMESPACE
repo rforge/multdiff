@@ -1,0 +1,27 @@
+importFrom("graphics", "plot")
+
+exportClasses("ProcessData",
+              "ContinuousProcess",
+              "MarkedPointProcess",
+              "JumpProcess")
+
+exportMethods("continuousProcess",
+              "dim",
+              "getId",
+              "getPointId",
+              "getMarkValue",
+              "getPlotData",
+              "getPointTime",
+              "getPointPosition",
+              "getPosition",
+              "getTime",
+              "getValue",
+              "integrator",
+              "jumpProcess",
+              "markedPointProcess",
+              "colNames",
+              "colNames<-",
+              "plot",
+              "subset",
+              "[")
+              
