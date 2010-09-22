@@ -1,15 +1,18 @@
 \name{ContinuousProcess-class}
 \docType{class}
 \alias{ContinuousProcess-class}
+\alias{dim,ContinuousProcess-method}
+\alias{colNames,ContinuousProcess-method}
+\alias{colNames<-,ContinuousProcess,character-method}
 \alias{getId,ContinuousProcess-method}
-\alias{getPlotData,ContinuousProcess-method}
+\alias{getId}
+\alias{getPosition}
 \alias{getPosition,ContinuousProcess-method}
+\alias{getTime}
+\alias{getTime,ContinuousProcess-method}
 \alias{getValue,ContinuousProcess-method}
 \alias{getValue}
-\alias{initialize,ContinuousProcess-method}
-\alias{plot,ContinuousProcess,missing-method}
-\alias{show,ContinuousProcess-method}
-\alias{subset,ContinuousProcess-method}
+\alias{show,ontinuousProcess-method}
 
 \title{Class "ContinuousProcess"}
 \description{	
@@ -20,49 +23,75 @@ time processes.
 
 }
 \section{Objects from the Class}{
-  Objects can be created by calls of the form \code{new("ContinuousProcess", id, position, value)}.
+  Objects can be created by calls of the function \code{continuousProcess}.
   
   The object contains time points or positions in one-dimensional space 
-  and corresponding observations of a univariate or multivariate process. 
+  and corresponding observations of a univariate or multivariate
+  process. The data structure can hold data for several units, or
+  individuals.  
+
+  The class extends \code{ProcessData} and is extended by the classes
+  \code{markedPointProcess} and \code{JumpProcess}. These classes make
+  up an infrastructure for storing and handling general stochastic
+  process data. 
 
 }
 \section{Slots}{
   \describe{
-    \item{\code{id}:}{Object of class \code{"factor"} - the
-      identification of the continuous process that the observation belongs to.}
-    \item{\code{position}:}{Object of class \code{"numeric"} - the
-      position or time of the observation. }
-    \item{\code{value}:}{Object of class \code{"Matrix"} - the value(s) of the observations 
-      stored as a (potentially) sparse matrix.}
+    \item{\code{colNames}:}{ a \code{character}.}
+
+    \item{\code{idVar}:}{ a \code{character}.}
+
+    \item{\code{iSubset}:}{ an \code{integer} vector. References for subsetting.}
+    
+    \item{\code{jSubset}:}{ an \code{integer} vector. References for subsetting.}
+
+    \item{\code{positionVar}:}{ a \code{character}.}
+    
+    \item{\code{valueEnv}:}{ an \code{environment}.}
   }
 }
 \section{Methods}{
   \describe{
+
+     \item{colNames}{\code{signature(object = "ContinuousProcess")}: Returns
+       the column names.}
+
+     \item{colNames<-}{\code{signature(object = "ContinuousProcess",
+       value="character")}: Sets the column names.}
+     
+     \item{dim}{\code{signature(x = "ContinuousProcess")}: Returns the
+       dimensions.}
+    
     \item{getId}{\code{signature(object = "ContinuousProcess")}: Returns
-      the identification variable \code{id}. }
-    \item{getPlotData}{\code{signature(object = "ContinuousProcess")}: Returns the data frame that is used for plotting. }
-    \item{getPosition}{\code{signature(object = "ContinuousProcess")}: Returns the time or position, \code{position}, of the observations. }
+      the identification variable with name in slot \code{idVar}. }
+
+    \item{getPosition}{\code{signature(object = "ContinuousProcess")}: Returns the time/position of the observations. }
+
+    \item{getTime}{\code{signature(object = "ContinuousProcess")}: Same
+    as \code{getPosition}.}
+    
     \item{getValue}{\code{signature(object = "ContinuousProcess")}:
-      Returns the observations, \code{value}, as a \code{"Matrix"}.}
-    \item{initialize}{\code{signature(.Object = "ContinuousProcess")}.}
-    \item{plot}{\code{signature(x = "ContinuousProcess", y =
-	"missing")}: Plots the observations as continuous process(es).}
-    \item{show}{\code{signature(object = "ContinuousProcess")}.}
-    \item{subset}{\code{signature(x = "ContinuousProcess")}: Selects a
-      subset of the full data set by either specifying a vector of
-      logicals or an expression in terms of \code{id}, \code{position}
-      or \code{value} that will evaluate to logical. Returns an
-      object of class \code{ContinuousProcess}. }
+      Returns the observations as a \code{"Matrix"}.}
+    
   }
+
+    Other methods are documented in their own help pages.
 }
 
 \author{Niels Richard Hansen, \email{Niels.R.Hansen@math.ku.dk}}
 
 \seealso{
-  \code{\linkS4class{ProcessData}} 
+  \code{\linkS4class{ProcessData}},  \code{\link{continuousProcess}}. 
+
 }
 
 \examples{
 showClass("ContinuousProcess")
+CP <- continuousProcess(data.frame(id = rep(c(1,2), each = 10),
+                                   time = rep(seq(0.1,1,0.1), 2),
+                                   value = rnorm(20)))  
+subset(CP, id == 1)
+subset(CP, time  >= 0.5)
 }
 \keyword{classes}
