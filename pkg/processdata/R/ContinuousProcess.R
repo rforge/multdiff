@@ -169,7 +169,7 @@ setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "numeric"),
 
 setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "logical"),
           function(x, i, j, ... , drop = FALSE) {
-            j <- seq_along(colNames(x))
+            j <- seq_along(colNames(x))[j]
             x <- callGeneric(x, , j, drop = drop)
             return(x)
           }
