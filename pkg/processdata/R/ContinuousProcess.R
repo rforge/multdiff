@@ -42,6 +42,8 @@ setMethod("continuousProcess", "data.frame",
             valueEnv$id <- id
             valueEnv$position <- position
             valueEnv$value <- Matrix(as.matrix(value), dimnames = dimnames(value))
+            valueEnv$i <- seq_along(id)
+            valueEnv$j <- seq_len(dim(valueEnv$value)[2])
 
             colNames <- c(names(unitData),colnames(value))
             
@@ -80,7 +82,7 @@ setReplaceMethod("colNames", c(object = "ContinuousProcess", value = "character"
 
 setMethod("iSubset", "ContinuousProcess",
           function(object) {
-            i <- seq_len(length(object@valueEnv$id))
+            i <- object@valueEnv$i
             if(!isTRUE(object@iSubset == -1L))
               i <- i[object@iSubset]
             return(i)
@@ -89,7 +91,7 @@ setMethod("iSubset", "ContinuousProcess",
 
 setMethod("jSubset", "ContinuousProcess",
           function(object) {
-            j <- seq_len(dim(object@valueEnv$value)[2])
+            j <- object@valueEnv$j
             if(!isTRUE(object@jSubset == -1L))
               j <- j[object@jSubset]
              
@@ -139,7 +141,7 @@ setMethod("[", c(x = "ContinuousProcess", i = "numeric", j = "missing"),
 
 setMethod("[", c(x = "ContinuousProcess", i = "logical", j = "missing"),
           function(x, i, j, ... , drop = FALSE) {
-            i <- seq_along(getId(x))[i]
+            i <- iSubset(x)[i]
             x <- callGeneric(x, i, , drop = drop)
             return(x)
           }
@@ -167,7 +169,7 @@ setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "numeric"),
 
 setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "logical"),
           function(x, i, j, ... , drop = FALSE) {
-            j <- seq_along(colNames(x))[j]
+            j <- seq_along(colNames(x))
             x <- callGeneric(x, , j, drop = drop)
             return(x)
           }

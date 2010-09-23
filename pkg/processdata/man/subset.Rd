@@ -48,7 +48,7 @@
 
 \S4method{subset}{ContinuousProcess}(x, subset, select, ...)
 
-\S4method{subset}{MarkedPointProcess}(x, subset, select, markSubset, ...)
+\S4method{subset}{MarkedPointProcess}(x, subset, select, ..., markSubset)
 
 \S4method{subset}{JumpProcess}(x, subset, select, ...)
 
@@ -76,7 +76,7 @@
 
    \item{markSubset}{ an expression given in terms of the mark
    variables in the data set that evaluates to \code{logical}. See
-   details for further explanations.  }
+   details for further explanations. Argument must be named. }
 
    \item{...}{other arguments.}
 }

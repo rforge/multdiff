@@ -10,12 +10,12 @@ setMethod("jumpProcess", "MarkedPointProcess",
               pointProcessEnv <- new.env(parent = .GlobalEnv)
               pointProcessEnv$id <- getPointId(.Object)
               pointProcessEnv$position <- getPointPosition(.Object)
-              pointProcessEnv$pointPointer <- getPointPointer(.Object)
               pointProcessEnv$markType <- factor(getMarkType(.Object), levels = c(valueOrder, markLevels[!jumpLevels]))
               pointProcessEnv$markValue <- getMarkValue(.Object)
                                                  
               .Object@pointProcessEnv <- pointProcessEnv
             }
+
             .Object@colNames <- unique(colNames(.Object))
             validObject(.Object)
             return(.Object)
@@ -37,7 +37,7 @@ setMethod("getPlotData", "JumpProcess",
             plotData <- plotData$plotData
             jumpVariables <- plotPointData$variable %in% levels(plotData$variable)
             plotPointData <- plotPointData[jumpVariables, ]
-            pointee <- getPointPointer(object)$pointee[jumpVariables]
+            pointee <- getPointPointer(object)[jumpVariables]
             variable <- as.character(plotPointData$variable)
             plotPointData$value <-  as.numeric(sapply(seq_along(plotPointData$id), function(i) getValue(object)[pointee[i], variable[i]]))
             plotPointData$iSubset <- pointee
@@ -92,7 +92,8 @@ setMethod("plot", c("JumpProcess", "missing"),
 setMethod("showData", "JumpProcess",
           function(object, ...) {
             summaryById <- callNextMethod()
-            structure <- paste(strsplit(summaryById$structure, "\n")[[1]][-2], "\n")
+            structure <- strsplit(summaryById$structure, "\n")[[1]]
+            structure <- paste(structure[-(length(structure) - c(0,1,2))], "\n")
             summaryById <- summaryById$summary
 
             return(list(summary = summaryById, structure = structure))            

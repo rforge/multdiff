@@ -12,6 +12,9 @@
 \alias{getMarkType}
 \alias{getMarkValue,MarkedPointProcess-method}
 \alias{getMarkValue}
+\alias{getPointPointer}
+\alias{getPointPointer,MarkedPointProcess,missing-method}
+\alias{getPointPointer,MarkedPointProcess,character-method}
 \alias{getPointPosition,MarkedPointProcess-method}
 \alias{getPointPosition}
 \alias{getPointTime,MarkedPointProcess-method}
@@ -48,8 +51,10 @@ The class extends \code{ContinuousProcess} and is extended by the class
 
     \item{\code{markVar}}{ a \code{character}.}
 
+    \item{\code{pointPointer}}{ an \code{integer}.}
+
     \item{\code{pointProcessEnv}}{ an \code{environment}.}
-        
+    
   }
 }
 \section{Methods}{
@@ -79,6 +84,10 @@ The class extends \code{ContinuousProcess} and is extended by the class
       
     \item{getPointTime}{\code{signature(object =
 	"MarkedPointProcess")}: Same as \code{getPointPosition}.}
+    
+    \item{getPointPointer}{\code{signature(object =
+	"MarkedPointProcess", mark = "character")}: Returns the pointer
+	to the point positions in the continuous data.}
   }
   Other methods are documented in their own help pages.
 }

@@ -42,7 +42,9 @@ setClass("ContinuousProcess",
                         ## components of the data:
                         ## id = "factor",
                         ## position = "numeric",
-                        ## value = "Matrix"
+                        ## value = "Matrix",
+                        ## i = "numeric",
+                        ## j = "numeric"
                         valueEnv = "environment"                 
                         ),
          contains = "ProcessData",
@@ -78,6 +80,7 @@ setClass("MarkedPointProcess",
                         iPointSubset = "integer",
                         jPointSubset = "integer",
                         markVar = "character",
+                        pointPointer = "integer",
                         
                         ## The 'pointProcessEnv' environment contains
                         ## the following four components:
@@ -85,7 +88,6 @@ setClass("MarkedPointProcess",
                         ## position = "numeric",
                         ## markType = "factor",
                         ## markValue = "data.frame"
-                        ## pointPointer = "data.frame"
                         pointProcessEnv = "environment"
                         ),
          contains = "ContinuousProcess",
@@ -99,6 +101,8 @@ setClass("MarkedPointProcess",
              stop("Size of the slot 'id' and the dimension of 'markValue' do not match.")
            if(any(levels(getPointId(object)) != rownames(getUnitData(object)))) 
              stop(paste("The point process levels of", object@idVar, "and the row names of unitData are not of equel length or in the same order."))
+           if(any(unlist(tapply(getPointPosition(object),getPointId(object),is.unsorted))))
+             stop(paste(object@positionVar,"for the point process data not sorted within", object@idVar))
            
            return(TRUE)
          }

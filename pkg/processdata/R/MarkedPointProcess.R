@@ -6,17 +6,22 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
             ## at the end of the contructor.
             pointProcess <- new("MarkedPointProcess") 
             as(pointProcess, "ContinuousProcess") <- continuousData
-            
-            if(continuousData@idVar %in% names(pointData)) {
-              id <- pointData[ ,pointProcess@idVar]
-             } else {
-              id <- rep(getId(pointProcess)[1], dim(pointData)[1])
-            }
             if(pointProcess@positionVar %in% names(pointData)) {
               position <- pointData[ ,pointProcess@positionVar]
             } else {
               stop(paste("pointData needs a column named", pointProcess@positionVar))
             }
+            if(continuousData@idVar %in% names(pointData)) {
+              id <- pointData[ ,pointProcess@idVar]
+             } else {
+              id <- rep(getId(pointProcess)[1], dim(pointData)[1])
+            }
+            ord <- tapply(position, id, order)
+            ord <- unlist(lapply(levels(id), function(i) which(id == i)[ord[[i]]]), use.names=FALSE)
+            pointData <-  pointData[ord, , drop = FALSE]
+            id <- id[ord]
+            position <- position[ord]
+            
             if(markVar %in% names(pointData)) {
               markType <- pointData[ , markVar]
             } else {
@@ -42,62 +47,85 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
                                         levels(getMarkType(pointProcess)),
                                         names(getMarkValue(pointProcess)))
 
+            lockEnvironment(pointProcess@pointProcessEnv, bindings = TRUE)
+
+            
             ## Compute a combined set of evaluation points and keep track of which
             ## points are points from the marked point process.
             pointId <- getPointId(pointProcess)
             contId <- getId(pointProcess)
             pointPosition <- getPointPosition(pointProcess)
             contPosition <- getPosition(pointProcess)
-            evalPosition <- data.frame(id = factor(c(as.character(pointId),
-                                         as.character(contId)),
-                                         levels = levels(pointId)),
+            evalPosition <- data.frame(id = factor(c(as.character(pointId), as.character(contId)), levels = levels(contId)),
                                        position = c(pointPosition, contPosition),
-                                       pointer = c(seq_along(pointPosition), rep(Inf,length(contPosition))))
+                                       pointer = c(seq_along(pointPosition), rep(Inf, length(contPosition))))
 
-            ## Dropping duplicated entries.
-            dup <- unlist(tapply(evalPosition$position,
-                                 evalPosition$id,
-                                 duplicated),
-                          use.names = FALSE)        
-            
-            evalPosition <- evalPosition[unlist(tapply(seq_along(evalPosition$id),
-                                                       evalPosition$id,
-                                                       function(s) s))[!dup], ]
+            evalPosition <- split(evalPosition, evalPosition$id)
+            ## Dropping duplicated entries within 'id'.
+            dup <- lapply(evalPosition, function(e) duplicated(e$position))
+            evalPosition <- sapply(names(evalPosition), function(i) evalPosition[[i]][!(dup[[i]] & evalPosition[[i]]$pointer == Inf), ], simplify = FALSE)
 
             ## Order within 'id'.
-            
-            ord <- tapply(evalPosition$position,
-                          evalPosition$id,
-                          order)
-            
-            ord <- unlist(lapply(levels(evalPosition$id),
-                                 function(id) which(evalPosition$id == id)[ord[[id]]]),
-                          use.names=FALSE)
+            ord <- lapply(evalPosition, function(e) order(e$position))
+            evalPosition <- sapply(names(evalPosition), function(i) evalPosition[[i]][ord[[i]], ],  simplify = FALSE)
 
-            pointee <- which(evalPosition$pointer[ord] < Inf)
-            pointProcess@pointProcessEnv$pointPointer <- data.frame(pointer = evalPosition$pointer[ord][pointee],
-                                                pointee = pointee)
-            lockEnvironment(pointProcess@pointProcessEnv, bindings = TRUE)
+            contPosition <- split(data.frame(pointer = seq_along(contPosition), position = contPosition), contId)
+
+            ii <- sapply(names(evalPosition),
+                         function(i) {
+                           findInterval(evalPosition[[i]]$position,
+                                        c(contPosition[[i]]$position, Inf),
+                                        all.inside=TRUE)
+                         },
+                         simplify = FALSE)
+
+            ii <- unlist(lapply(names(evalPosition), function(i) contPosition[[i]]$pointer[ii[[i]]]), use.names = FALSE)
+
+            evalPosition <- do.call("rbind", evalPosition)                 
+            
+            ## ## Order within 'id'.
+            
+            ## ord <- tapply(evalPosition$position,
+            ##               evalPosition$id,
+            ##               order)
+            
+            ## ord <- unlist(lapply(levels(evalPosition$id),
+            ##                      function(id) which(evalPosition$id == id)[ord[[id]]]),
+            ##               use.names=FALSE)
+            
+            ## ## Dropping duplicated entries.
+            ## dup <- unlist(tapply(evalPosition$position,
+            ##                      evalPosition$id,
+            ##                      duplicated),
+            ##               use.names = FALSE)        
+            
+            ## evalPosition <- evalPosition[unlist(tapply(seq_along(evalPosition$id),
+            ##                                            evalPosition$id,
+            ##                                            function(s) s))[!dup], ]
+
+            pointProcess@pointPointer <- which(evalPosition$pointer < Inf)
 
             
-            ii <- sapply(levels(evalPosition$id),
-                               function(i) {
-                                 findInterval(evalPosition[ord, 'position'][evalPosition[ord,"id"] == i],
-                                              c(contPosition[contId == i],Inf),
-                                              all.inside=TRUE)},
-                        simplify=FALSE)
+            ## ii <- sapply(levels(evalPosition$id),
+            ##                    function(i) {
+            ##                      findInterval(evalPosition[ord, 'position'][evalPosition[ord,"id"] == i],
+            ##                                   c(contPosition[contId == i], Inf),
+            ##                                   all.inside=TRUE)},
+            ##             simplify=FALSE)
 
-            ii <- as.numeric(unlist(lapply(levels(evalPosition$id),
-                                           function(i) {
-                                             which(contId == i)[ii[[i]]]
-                                           }),
-                                    use.names=FALSE))
+            ## ii <- as.numeric(unlist(lapply(levels(evalPosition$id),
+            ##                                function(i) {
+            ##                                  which(contId == i)[ii[[i]]]
+            ##                                }),
+            ##                         use.names=FALSE))
           
             valueEnv <- new.env(parent = .GlobalEnv)
-            valueEnv$id <- evalPosition[ord, 'id']
-            valueEnv$position <- evalPosition[ord, 'position']
+            valueEnv$id <- evalPosition$id
+            valueEnv$position <- evalPosition$position
             valueEnv$value <- getValue(pointProcess)[ii, , drop=FALSE]
             rownames(valueEnv$value) <- NULL
+            valueEnv$i <- seq_along(evalPosition$id)
+            valueEnv$j <- seq_len(dim(valueEnv$value)[2])
             pointProcess@valueEnv <- valueEnv
             lockEnvironment(pointProcess@valueEnv, bindings = TRUE)
             validObject(pointProcess)
@@ -167,7 +195,7 @@ setMethod("integrator", "MarkedPointProcess",
             
             ## The counting process
             process <- rep(0,length(getId(object)))
-            process[getPointPointer(object)[ , "pointee"]] <- 1
+            process[getPointPointer(object)] <- 1
             process <- tapply(process, getId(object), cumsum)
             
             if(is.function(f))
@@ -202,6 +230,8 @@ setMethod("integrator", "MarkedPointProcess",
             valueEnv$id <- getId(CP)
             valueEnv$position <- getPosition(CP)
             valueEnv$value <- Matrix(process, dimnames = list(NULL, "integrated"))
+            valueEnv$i <- seq_along(valueEnv$id)
+            valueEnv$j <- seq_len(dim(valueEnv$value)[2])
             CP@valueEnv <- valueEnv
             CP@colNames <- c(colNames(CP), "integrated")
             CP@jSubset <- 1L
@@ -355,7 +385,7 @@ setMethod("getPlotData", "MarkedPointProcess",
                   plotPointData$value <- low - (high-low)/4
                   plotPointData$contVariable <- factor(pLevels[length(pLevels)], levels = pLevels)
                 } else if(isTRUE(y %in% colnames(getValue(object)))) {
-                  plotPointData$value <- getValue(object)[getPointPointer(object)$pointee, y]
+                  plotPointData$value <- getValue(object)[getPointPointer(object), y]
                   plotPointData$contVariable <- as.factor(y)
                 }
               } else {
@@ -450,35 +480,37 @@ setMethod("plot", c("MarkedPointProcess", "character"),
           )
 
 setMethod("subset", "MarkedPointProcess",
-          function(x, subset, select, markSubset, ...) {
-            .local <- function(x, markSubset, ...) {
+          function(x, ...) {
+            .local <- function(x, subset, select, markSubset, ...) {
               if (missing(markSubset)) 
                 r <- TRUE  
               else {
-              e <- substitute(markSubset)
-              frame <- cbind(data.frame(getMarkType(x)),
-                             getMarkValue(x))
-              names(frame)[1] <- x@markVar
+                e <- substitute(markSubset)
+                frame <- cbind(data.frame(getMarkType(x)),
+                               getMarkValue(x))
+                names(frame)[1] <- x@markVar
                 r <- eval(e, frame, parent.frame())
-              if (!is.logical(r)) 
-                stop("'markSubset' must evaluate to logical")
-              r <- r & !is.na(r) 
-            }
+                if (!is.logical(r)) 
+                  stop("'markSubset' must evaluate to logical")
+                r <- r & !is.na(r) 
+              }
               if(all(r)) {
                 return(x)
               } else {
-                return(x[-getPointPointer(x)[!r,2], ])
+                return(x[-getPointPointer(x)[!r], ])
               }
             }
-            .local(callNextMethod(), markSubset = markSubset, ...)
+            .local(x = callNextMethod(), ...)
           }
           )
 
 setMethod("[", c(x = "MarkedPointProcess", i = "integer", j = "missing"),
           function(x, i, j, ... , drop = FALSE) {
             as(x, "ContinuousProcess") <- callGeneric(as(x, "ContinuousProcess"), i, , )
-            i <- getPointPointer(x)$pointee %in% iSubset(x)
+            i <- getPointPointer(x) %in% iSubset(x)
             iPointSubset(x) <- iPointSubset(x)[i]
+            x@pointPointer <- match(getPointPointer(x)[i], iSubset(x))
+
             return(x)
           }
           )
@@ -499,15 +531,16 @@ setMethod("[", c(x = "MarkedPointProcess", i = "missing", j = "integer"),
           )
 
 
-setMethod("getPointPointer", "MarkedPointProcess",
-          function(object, ...) {
-            if(isTRUE(object@iPointSubset == -1L)) {
-              value <- object@pointProcessEnv$pointPointer
-            } else {
-              value <- object@pointProcessEnv$pointPointer[iPointSubset(object), ]
-              value$pointee <- match(value$pointee, iSubset(object))
-            }
-            
+setMethod("getPointPointer", c("MarkedPointProcess", "missing"),
+          function(object, mark, ...) {
+              value <- object@pointPointer
+            return(value)
+          }
+          )
+
+setMethod("getPointPointer", c("MarkedPointProcess", "character"),
+          function(object, mark, ...) {
+              value <- object@pointPointer[getMarkType(object) == mark]
             return(value)
           }
           )
