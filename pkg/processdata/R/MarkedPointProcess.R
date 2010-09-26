@@ -480,27 +480,25 @@ setMethod("plot", c("MarkedPointProcess", "character"),
           )
 
 setMethod("subset", "MarkedPointProcess",
-          function(x, ...) {
-            .local <- function(x, subset, select, markSubset, ...) {
-              if (missing(markSubset)) 
-                r <- TRUE  
-              else {
-                e <- substitute(markSubset)
-                frame <- cbind(data.frame(getMarkType(x)),
-                               getMarkValue(x))
-                names(frame)[1] <- x@markVar
-                r <- eval(e, frame, parent.frame())
-                if (!is.logical(r)) 
-                  stop("'markSubset' must evaluate to logical")
-                r <- r & !is.na(r) 
-              }
-              if(all(r)) {
-                return(x)
-              } else {
-                return(x[-getPointPointer(x)[!r], ])
-              }
+          function(x, ... , markSubset) {
+            y <- callNextMethod()
+            if (missing(markSubset)) 
+              r <- TRUE  
+            else {
+              e <- substitute(markSubset)
+              frame <- cbind(data.frame(getMarkType(y)),
+                             getMarkValue(y))
+              names(frame)[1] <- y@markVar
+              r <- eval(e, frame, parent.frame())
+              if (!is.logical(r)) 
+                stop("'markSubset' must evaluate to logical")
+              r <- r & !is.na(r) 
             }
-            .local(x = callNextMethod(), ...)
+            if(all(r)) {
+              return(y)
+            } else {
+              return(y[-getPointPointer(y)[!r], ])
+            }
           }
           )
 

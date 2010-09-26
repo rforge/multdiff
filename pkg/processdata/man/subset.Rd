@@ -48,7 +48,7 @@
 
 \S4method{subset}{ContinuousProcess}(x, subset, select, ...)
 
-\S4method{subset}{MarkedPointProcess}(x, subset, select, ..., markSubset)
+\S4method{subset}{MarkedPointProcess}(x, ..., markSubset)
 
 \S4method{subset}{JumpProcess}(x, subset, select, ...)
 
@@ -58,7 +58,7 @@
 \arguments{
 
   \item{x}{ a process object.}
-
+ 
   \item{i}{ an \code{integer}, \code{numeric}, \code{logical} or
   \code{character}.}
 
@@ -74,18 +74,17 @@
    \item{select}{ an expression that evaluates to \code{logical} in a
     frame consisting of the column names.}
 
-   \item{markSubset}{ an expression given in terms of the mark
-   variables in the data set that evaluates to \code{logical}. See
-   details for further explanations. Argument must be named. }
+\item{markSubset}{ an expression given in terms of the mark
+-   variables in the data set that evaluates to \code{logical}. The argument must be
+named.}
 
-   \item{...}{other arguments.}
+    \item{...}{other arguments. In particular, the \code{subset} method
+for \code{MarkedPointProcess} takes the two arguments \code{subset} and
+\code{select} and passes them to the \code{ContinuousProcess}
+method. } 
 }
 
-\details{
 
-TO BE FILLED IN.     
-
-}
 
 \value{
 

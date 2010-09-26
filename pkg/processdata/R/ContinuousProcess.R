@@ -204,7 +204,7 @@ setMethod("[", c("ContinuousProcess", "missing", "missing", "missing"),
           )
 
 setMethod("subset", "ContinuousProcess",
-          function(x, subset, select, ...) {           
+          function(x, subset, select, ...) {
             if (missing(subset)) 
               r <- TRUE 
             else {
