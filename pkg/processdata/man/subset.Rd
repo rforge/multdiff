@@ -74,8 +74,8 @@
    \item{select}{ an expression that evaluates to \code{logical} in a
     frame consisting of the column names.}
 
-\item{markSubset}{ an expression given in terms of the mark
--   variables in the data set that evaluates to \code{logical}. The argument must be
+\item{markSubset}{ an expression given in terms of the mark variables in
+the data set that evaluates to \code{logical}. The argument must be
 named.}
 
     \item{...}{other arguments. In particular, the \code{subset} method
