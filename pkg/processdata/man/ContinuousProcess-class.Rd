@@ -12,6 +12,8 @@
 \alias{getTime,ContinuousProcess-method}
 \alias{getValue,ContinuousProcess-method}
 \alias{getValue}
+\alias{getUnitData,ContinuousProcess-method}
+\alias{getUnitData}
 \alias{show,ontinuousProcess-method}
 
 \title{Class "ContinuousProcess"}
@@ -73,6 +75,10 @@ time processes.
     
     \item{getValue}{\code{signature(object = "ContinuousProcess")}:
       Returns the observations as a \code{"Matrix"}.}
+
+     \item{getUnitData}{\code{signature(object = "ContinuousProcess")}:
+      Returns the unit data as a \code{"data.frame"} with column names
+      the unit identifikations.}
     
   }
 

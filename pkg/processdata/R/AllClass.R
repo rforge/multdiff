@@ -61,7 +61,7 @@ setClass("ContinuousProcess",
            if(any(levels(getId(object)) != rownames(getUnitData(object))) || length(levels(getId(object))) != dim(getUnitData(object))[1]){
              stop(paste("The levels of", object@idVar, "and the row names of unitData are either not of equal length or in the same order."))
            }
-           if(any(unlist(tapply(getPosition(object),getId(object),is.unsorted))))
+           if(any(unlist(tapply(getPosition(object), getId(object), is.unsorted))))
              stop(paste(object@positionVar,"not sorted within", object@idVar))
             
            ## Checks that the components in the environment have the correct
@@ -101,7 +101,7 @@ setClass("MarkedPointProcess",
              stop("Size of the slot 'id' and the dimension of 'markValue' do not match.")
            if(any(levels(getPointId(object)) != rownames(getUnitData(object)))) 
              stop(paste("The point process levels of", object@idVar, "and the row names of unitData are not of equel length or in the same order."))
-           if(any(unlist(tapply(getPointPosition(object),getPointId(object),is.unsorted))))
+           if(any(unlist(tapply(getPointPosition(object), getPointId(object), is.unsorted))))
              stop(paste(object@positionVar,"for the point process data not sorted within", object@idVar))
            
            return(TRUE)
