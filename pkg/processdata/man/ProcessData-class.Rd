@@ -2,7 +2,6 @@
 \docType{class}
 \alias{ProcessData-class}
 \alias{getUnitData,ProcessData-method}
-\alias{getUnitData}
 \alias{setUnitData,ProcessData-method}
 \alias{setUnitData}
 \alias{colNames,ProcessData-method}

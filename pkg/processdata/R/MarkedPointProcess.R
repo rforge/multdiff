@@ -538,7 +538,7 @@ setMethod("getPointPointer", c("MarkedPointProcess", "missing"),
 
 setMethod("getPointPointer", c("MarkedPointProcess", "character"),
           function(object, mark, ...) {
-              value <- object@pointPointer[getMarkType(object) == mark]
+              value <- object@pointPointer[getMarkType(object) %in% mark]
             return(value)
           }
           )
