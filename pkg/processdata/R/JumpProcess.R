@@ -93,7 +93,8 @@ setMethod("showData", "JumpProcess",
           function(object, ...) {
             summaryById <- callNextMethod()
             structure <- strsplit(summaryById$structure, "\n")[[1]]
-            structure <- paste(structure[-(length(structure) - c(0,1,2))], "\n")
+           if (length(structure) > 3) 
+             structure <- paste(structure[-(length(structure) - c(0, 1, 2))], "\n")
             summaryById <- summaryById$summary
 
             return(list(summary = summaryById, structure = structure))            

@@ -358,7 +358,7 @@ setMethod("showData", "ContinuousProcess",
                                  positionSummary,
                                  unitData,
                                  as.data.frame(values))
-              colnames(summaryById)[1:2] <- c("nr. obs", paste(object@positionVar,"range"))
+              colnames(summaryById)[1:2] <- c("grid points", paste(object@positionVar,"range"))
             } else {
               summaryById <- unitData
             }
