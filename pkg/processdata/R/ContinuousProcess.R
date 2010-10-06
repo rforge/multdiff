@@ -351,13 +351,13 @@ setMethod("showData", "ContinuousProcess",
                 positionSummary <- data.frame(1)[FALSE,]
               }
               
-              summaryById <- summary(id)
+              summaryById <- as.numeric(table(id))
               firstEntries <- sapply(splitEntries, function(e) e[1])
               values <- as.matrix(getValue(object))[firstEntries, , drop = FALSE]
               summaryById <- cbind(summaryById,
-                                 positionSummary,
-                                 unitData,
-                                 as.data.frame(values))
+                                   positionSummary,
+                                   unitData,
+                                   as.data.frame(values))
               colnames(summaryById)[1:2] <- c("grid points", paste(object@positionVar,"range"))
             } else {
               summaryById <- unitData

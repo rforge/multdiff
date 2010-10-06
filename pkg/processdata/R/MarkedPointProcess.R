@@ -136,7 +136,7 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
 
 setMethod("markedPointProcess", c("data.frame", "data.frame"),
           function(pointData, continuousData, markVar = 'markType', ...) {
-            callGeneric(pointData, continuousProcess(continuousData, ...), ...)
+            callGeneric(pointData, continuousProcess(continuousData, ...),  markVar = markVar, ...)
           }
           )
 
