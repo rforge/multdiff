@@ -6,7 +6,7 @@
 \description{	
 
 An object of class \code{JumpProcess} is a container for data
-obtained as observations of continuous time process with jumps.
+obtained as observations of continuous time processes with jumps.
 The jump times and jump sizes are represented as a marked point
 process. 
 

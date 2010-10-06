@@ -6,7 +6,7 @@
 \description{
 
   This package implements data structures for stochastic processes.
-  The data can be in the form or either discretely observed continuous
+  The data can be in the form of either discretely observed continuous
   time processes, marked point processes, jump processes or a combination.
 
 }
@@ -14,8 +14,8 @@
 \tabular{ll}{
 Package: \tab processdata\cr
 Type: \tab Package\cr
-Version: \tab 0.6 \cr
-Date: \tab 2010-25-09 \cr
+Version: \tab 0.7 \cr
+Date: \tab 2010-10-07 \cr
 License: \tab GPL version 2 or newer \cr
 LazyLoad: \tab yes\cr
 }
@@ -51,28 +51,27 @@ CPframe <- data.frame(time = seq(0,1,0.01),
 CP <- continuousProcess(CPframe)
 
 \dontrun{
-plot(CP)
-}
+plot(CP)}
 
 ### Setting up a simple point process with two marks
 
-PPframe <- data.frame(time = c(0.1,0.12,0.35,0.5,0.55,0.56,0.7,0.75,0.9,0.91),
-                      markType = c("A","A","B","B","A","A","B","A","B","A"))
+PPframe <- data.frame(
+ time = c(0.1,0.12,0.35,0.5,0.55,0.56,0.7,0.75,0.9,0.91),
+ markType = c("A","A","B","B","A","A","B","A","B","A")
+)
 
 PP <- markedPointProcess(PPframe, seq(0,1,0.01))
 
 
 \dontrun{
-plot(PP)
-}
+plot(PP)}
 
 ### Combining the two data structures in a single object
 
 process <- markedPointProcess(PPframe, CPframe)
 
 \dontrun{
-plot(process)
-}
+plot(process)}
 
 
 }

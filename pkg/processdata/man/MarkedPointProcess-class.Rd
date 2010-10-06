@@ -37,8 +37,7 @@ associated mark information, or a combination of point process data and
 continuous process data.  
 
 The class extends \code{ContinuousProcess} and is extended by the class
-  \code{JumpProcess}. These classes make
-  up an infrastructure for storing and handling general stochastic
+  \code{JumpProcess}. These classes form an infrastructure for storing and handling general stochastic
   process data. 
 
 }
@@ -51,7 +50,7 @@ The class extends \code{ContinuousProcess} and is extended by the class
 
     \item{\code{markVar}}{ a \code{character}.}
 
-    \item{\code{pointPointer}}{ an \code{integer}.}
+    \item{\code{pointPointer}}{ an \code{integer} vector.}
 
     \item{\code{pointProcessEnv}}{ an \code{environment}.}
     

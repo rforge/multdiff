@@ -89,10 +89,10 @@ method. }
 \value{
 
   A process object of the same class as \code{x} unless \code{drop =
-  TRUE}. If \code{drop = TRUE} the object is dropped to one further down
+  TRUE}. If \code{drop = TRUE} the object is dropped to a class further down
   the class hierarchy if appropriate. For instance, subsetting to column entries
   for a \code{MarkedPointProcess} such that all mark columns are lost
-  result in an object of class \code{ContinuousProcess} if  \code{drop =
+  results in an object of class \code{ContinuousProcess} if  \code{drop =
     TRUE}.
  
 }

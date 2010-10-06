@@ -7,14 +7,15 @@
   data frame(s).
 }
 \usage{
-\S4method{continuousProcess}{data.frame}(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...)
+\S4method{continuousProcess}{data.frame}(continuousData, unitData = data.frame(),
+  metaData = list(), positionVar = 'time', idVar = 'id', ...)
 }
 \arguments{
   
   \item{continuousData}{ a data frame containing the process data. An
-    optional column with name \code{positionVar} (default "time")
+    optional column with name \code{positionVar} (default \code{'time'})
     specifies the x-coordinates where we have observations, and an
-    optional column with name \code{idVar} (default "id") specifies the
+    optional column with name \code{idVar} (default \code{'id'}) specifies the
     identification variable for the division of the data into units.
     Additional columns must be numeric and are taken as the coordinates
     of observations of the process.}
@@ -31,7 +32,7 @@
     value \code{'time'}.}
 
   \item{idVar}{a \code{character} specifying the name of the
-    identification variable for each unit. Default value 'id'.}
+    identification variable for each unit. Default value \code{'id'}.}
 
   \item{...}{ other arguments.}
 

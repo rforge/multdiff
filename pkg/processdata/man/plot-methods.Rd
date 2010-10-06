@@ -14,7 +14,9 @@
 \title{Methods for 'plot' in Package 'processdata'}
 \description{
   Methods for plotting process data contained in objects of class
-  \code{ContinuousProcess}, \code{MarkedPointProcess} or \code{JumpProcess}.
+  \code{ContinuousProcess},
+  \code{MarkedPointProcess} or
+  \code{JumpProcess}.
 }
 \usage{
 \S4method{plot}{ContinuousProcess}(x, nPoints = 200, ...)
@@ -34,10 +36,10 @@
   \item{x}{ process object to be plotted.  }
 
   \item{y}{ a \code{character}. Specifies how the points are plotted for
-  a \code{MarkedPointProcess} object. Possible values are '@mark',
-  '@top', '@bottom', a name of a continuous process, a name of a mark
-  value, the unit identification variable name or a numeric. See Details
-  for further explanations. If missing, the default value is '@mark'.}
+    a \code{MarkedPointProcess} object. Possible values are \code{'@mark'},
+    \code{'@top'}, \code{'@bottom'}, a name of a continuous process variable, a name of a mark
+    value variable, the unit identification variable name or a numeric. See Details
+    for further explanations. If missing, the value is taken as \code{'@mark'}.}
   
   \item{object}{ process object for which to compute a data set for
     plotting.  }
@@ -93,22 +95,22 @@
   disconnected. A better alternative, assuming that the unit
   identification variable is \code{id}, is
 
-    \code{p + facet_grid(variable ~ .) + aes(color = id)}
+  \code{p + facet_grid(variable ~ .) + aes(color = id)}
  
    See \code{demo(examples, package = "ppstat")} for examples.
 
-   The \code{y} argument controls the y-values used for plotting
-   the point process part of the data set when plotting a
-   \code{MarkedPointProcess} object. Values '@top' and '@bottom' place
-   all points above or below, respectively, of the plot of the
+   The \code{y} argument controls the y-values used for plotting the
+   point process part of the data set when plotting a
+   \code{MarkedPointProcess} object. Values '@top' and '@bottom' place,
+   respectively, the points above or below the plot of the
    \code{ContinuousProcess} part of the object. A numeric value of
-   \code{y}, e.g. 0, places all points at this y-value. A name of a
-   mark value places the points at their corresponding mark value and a
-   name of a continuous process places the points on the continous
-   process.  The default, '@mark', places the points at different levels
-   on the y-axis corresponding to the different marks, and the unit
-   identification variable name places the points at different levels on the
-   y-axis corresponding to the different units. 
+   \code{y}, e.g. 0, places all points at this y-value. A name of a mark
+   value variable places the points at their corresponding mark value and a name
+   of a continuous process variable places the points on the continous process.
+   The default, \code{'@mark'}, places the points at different levels on the
+   y-axis corresponding to the different marks, and the unit
+   identification variable name places the points at different levels on
+   the y-axis corresponding to the different units.
    
 }
 

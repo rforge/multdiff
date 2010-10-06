@@ -17,9 +17,11 @@
 
 \S4method{markedPointProcess}{data.frame,data.frame}(pointData, continuousData, markVar = 'markType', ...)
 
-\S4method{markedPointProcess}{data.frame,vector}(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType', ...)
+\S4method{markedPointProcess}{data.frame,vector}(pointData, continuousData, positionVar = 'time',
+ idVar = 'id', markVar = 'markType', ...)
 
-\S4method{markedPointProcess}{data.frame}(pointData, positionVar = 'time', idVar = 'id', markVar = 'markType', ...)
+\S4method{markedPointProcess}{data.frame}(pointData, positionVar = 'time', idVar = 'id',
+ markVar = 'markType', ...)
 }
 \arguments{
 
@@ -38,10 +40,10 @@
     value \code{'time'}.}
 
   \item{idVar}{ a \code{character} specifying the name of the
-    identification variable for the units. Default value 'id'.}
+    identification variable for the units. Default value \code{'id'}.}
 
   \item{markVar}{ a \code{character} specifying the name of the
-    mark variable. Default value 'markType'.}
+    mark variable. Default value \code{'markType'}.}
   
   \item{...}{ further arguments passed to \code{continuousProcess}.} 
 }
@@ -56,6 +58,7 @@
   \code{idVar} is missing it is assumed that there is only one unit.
 
   The constructor with signature ("data.frame", "data.frame") is a wrapper for
+  
   \code{markedPointProcess(pointData, continuousProcess(continuousData, ...), markVar = 'markType', ...)}. 
 }
 

@@ -33,14 +33,14 @@ time processes.
   individuals.  
 
   The class extends \code{ProcessData} and is extended by the classes
-  \code{markedPointProcess} and \code{JumpProcess}. These classes make
-  up an infrastructure for storing and handling general stochastic
+  \code{MarkedPointProcess} and \code{JumpProcess}. These classes form
+  an infrastructure for storing and handling general stochastic
   process data. 
 
 }
 \section{Slots}{
   \describe{
-    \item{\code{colNames}:}{ a \code{character}.}
+    \item{\code{colNames}:}{ a \code{character} vector.}
 
     \item{\code{idVar}:}{ a \code{character}.}
 
@@ -78,7 +78,7 @@ time processes.
 
      \item{getUnitData}{\code{signature(object = "ContinuousProcess")}:
       Returns the unit data as a \code{"data.frame"} with column names
-      the unit identifikations.}
+      the unit identifications.}
     
   }
 
@@ -98,6 +98,6 @@ CP <- continuousProcess(data.frame(id = rep(c(1,2), each = 10),
                                    time = rep(seq(0.1,1,0.1), 2),
                                    value = rnorm(20)))  
 subset(CP, id == 1)
-subset(CP, time  >= 0.5)
+subset(CP, time >= 0.5)
 }
 \keyword{classes}

@@ -46,21 +46,19 @@ MP <- data.frame(time = seq(5, 95, 10),
 JP <- integrator(markedPointProcess(MP, 1:100))
 
 \dontrun{
-plot(JP)JP <- jumpProcess(MP, CP)
-
-
-}
+plot(JP)}
 
 ## A 'jump target' process (target = 0).
-CP <- data.frame(time = 1:100,
-                 foo = unlist(tapply(rnorm(100), rep(0:10, times = c(4, rep(10,9), 6)), cumsum)))
+CP <- data.frame(
+ time = 1:100,
+ foo = unlist(tapply(rnorm(100), rep(0:10, times = c(4, rep(10,9), 6)), cumsum))
+)
+
 MP$jump <-  CP$foo[seq(5, 95, 10)]
 JP <- jumpProcess(MP, CP)
 
 \dontrun{
-plot(JP)
-
-}
+plot(JP)}
 
 
 ## Another combined process.
@@ -69,9 +67,7 @@ CP$foo <- CP$foo + integrator(markedPointProcess(MP, 1:100), result = 'numeric')
 JP <- jumpProcess(MP, CP)
 
 \dontrun{
-plot(JP)
-
-}
+plot(JP)}
 
 }
 \keyword{manip}

@@ -14,23 +14,23 @@
 }
 \usage{
 
-\S4method{integrator}{MarkedPointProcess} (object, f = 1, jumpVar = '', result = 'JumpProcess', ...)
+\S4method{integrator}{MarkedPointProcess}(object, f = 1, jumpVar = '', result = 'JumpProcess', \dots)
 
 
 }
 \arguments{
 
-  \item{object}{ a \code{MarkedPointProcess} object.}
+  \item{object}{a \code{MarkedPointProcess} object.}
   
   \item{f}{ a \code{function} or \code{numeric} vector. The integrand,
     which is integrated with respect to the marked point process. If
     \code{f} is a function it needs to be vectorized in its first
     argument. The default value is \code{1}, meaning a constant
-    integrand. }.
+    integrand. }
 
   \item{jumpVar}{ a \code{character}. If not equal to one of the row
     names of \code{getMarkValue(object)} the counting process for
-    \code{mark} is computed. The default value is \code{'jump'}}
+    \code{mark} is computed. The default value is \code{''}}
   
   \item{result}{ a \code{character}. By default, the function returns an
     object of class \code{JumpProcess}. If \code{result = 'numeric'} it
@@ -71,13 +71,14 @@
 }
 \examples{
 
-## The integrated pure jump process.
 MP <- data.frame(time = seq(5, 95, 10),
                  markType = rep("foo", 10),
                  jump = rnorm(10))
-integrator(markedPointProcess(MP, 1:100))
 
 ## The counting process only
+integrator(markedPointProcess(MP, 1:100))
+
+## The integrated pure jump process.
 integrator(markedPointProcess(MP, 1:100), jumpVar = 'jump')
 
 ## With an integrand
