@@ -35,8 +35,8 @@ setClass("ContinuousProcess",
                         idVar = "character",
                         positionVar = "character",
                         
-                        ## Column names. 
-                        colNames = "character",                      
+                        ## Column names.
+                        colNames = "character",
 
                         ## The 'valueEnv' contains the following three
                         ## components of the data:
@@ -45,7 +45,10 @@ setClass("ContinuousProcess",
                         ## value = "Matrix",
                         ## i = "numeric",
                         ## j = "numeric"
-                        valueEnv = "environment"                 
+                        valueEnv = "environment",
+
+                        ## Which columns in the value matrix are factors.
+                        factors = "numeric"
                         ),
          contains = "ProcessData",
          validity = function(object){
@@ -117,3 +120,16 @@ setClass("JumpProcess",
          )
 
 ## TODO: Validity checks, constructors etc. 
+
+setClass("ProcessPlotData",
+         representation(continuousPlotData = "data.frame",
+                        factorPlotData = "data.frame",
+                        pointPlotData = "data.frame",
+                        position = "character",
+                        limits = "numeric",
+                        breaks = "numeric",
+                        labels = "character",
+                        idVar = "character",
+                        positionVar = "character")
+         )
+                        
