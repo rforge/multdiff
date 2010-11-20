@@ -41,11 +41,24 @@ setMethod("continuousProcess", "data.frame",
             valueEnv <- new.env(parent = .GlobalEnv)
             valueEnv$id <- id
             valueEnv$position <- position
-            valueEnv$value <- Matrix(as.matrix(value), dimnames = dimnames(value))
+            if(all(sapply(value, class) %in% c("integer", "numeric"))){
+              valueEnv$value <- Matrix(as.matrix(value))
+              factors <- numeric()
+            } else {
+              valueEnv$value <- model.Matrix(~., data = value,
+                                             sparse = TRUE,
+                                             row.names = FALSE)
+              assign <- attr(valueEnv$value, "assign")
+              intercept <- which(assign == 0)
+              valueEnv$value <- valueEnv$value[, -intercept]
+              assign <- assign[-intercept]
+              factors <- which(assign %in% which(!(sapply(value, class) %in% c("integer", "numeric"))))
+            }
+              
             valueEnv$i <- seq_along(id)
             valueEnv$j <- seq_len(dim(valueEnv$value)[2])
 
-            colNames <- c(names(unitData),colnames(value))
+            colNames <- c(names(unitData), colnames(valueEnv$value))
             
             new("ContinuousProcess",
                 unitData = unitData,
@@ -55,7 +68,8 @@ setMethod("continuousProcess", "data.frame",
                 idVar = idVar,
                 colNames = colNames,
                 positionVar = positionVar,
-                valueEnv = valueEnv)
+                valueEnv = valueEnv,
+                factors = factors)
           }
           )
 
@@ -254,6 +268,21 @@ setMethod("getId", "ContinuousProcess",
            }
           )
 
+setMethod("getFactors", "ContinuousProcess",
+          function(object, ...) {
+            factors <- numeric()
+            tryCatch(factors <- object@factors,
+                     error = function(e) {
+                       warning("Object is deprecated and lacks the factor slot. Either recreate the\n object from scratch or try the 'updateProcessObject' function.", call. = FALSE)}
+                     )
+            if(!isTRUE(object@jSubset == -1L)) {
+              factors <- which(jSubset(object) %in% factors)
+            }
+            
+            return(factors)
+           }
+          )
+
 setMethod("getValue", "ContinuousProcess",
           function(object, ...) {
             if(isTRUE(object@iSubset == -1L && object@jSubset == -1L)) {
@@ -271,52 +300,125 @@ setMethod("getValue", "ContinuousProcess",
           )
 
 setMethod("getPlotData", "ContinuousProcess",
-          function(object, nPoints = 200, allUnitData = FALSE, ...){
+          function(object, nPoints = 200, allUnitData = FALSE, selectPoints = NULL, ...){
+            factorPlotData <- data.frame()
+            factors <- getFactors(object)
+            if(length(factors) > 0) {
+
+              patterns <- apply(getValue(object)[, factors, drop = FALSE] != 0, 2, function(x) {
+                tmp <- tapply(seq_along(x), getId(object), function(j) {
+                  z <- x[j]
+                  n <- length(z)
+                  i <- which(z[-1] != z[-n])
+                  names(i) <- NULL
+                  i[!z[i]] <-  i[!z[i]] + 1
+                  if(z[1]) 
+                    i <- c(1,i)
+                  if(z[n])
+                    i <- c(i,n)
+                  if(length(i) == 0)
+                    i <- NA
+                  return(getPosition(object)[j][i])
+                })
+                attributes(tmp) <- NULL
+                names(tmp) <- levels(getId(object))
+                return(tmp)
+              })              
+              
+              uniqueNames <- unlist(lapply(patterns, function(y) {
+                lapply(y, function(z) {
+                  i <- seq(1,length(z),2)
+                  return(rep(z[i], each = 2, length.out = length(z)))
+                })
+              }), use.names = FALSE)
+
+              patterns <- melt(patterns)
+              names(patterns) <- c("position", "id", "variable")
+              patterns$id <- factor(patterns$id, levels = levels(getId(object)))
+              patterns$variable <- factor(patterns$variable)              
+              patterns$group <- paste(patterns$id,
+                                      patterns$variable,
+                                      uniqueNames, sep = "")
+
+              factorPlotData <- patterns[!is.na(patterns$position), ]
+              factorPlotData$value <- factorPlotData$variable
+              
+              if(isTRUE(allUnitData))            
+                factorPlotData <- cbind(plotData, getUnitData(object)[as.numeric(plotData$id), , drop = FALSE])
+
+              factorPlotData$type <- as.factor("Track")
+              
+            }
             
             iList <- unlist(tapply(seq_along(getId(object)),
                                      getId(object),
                                      list,
                                      simplify = FALSE),
-                              recursive = FALSE)
-              
-              i <- unlist(lapply(iList,
-                               function(ii) {
-                                 if(is.null(ii)) return(NULL)
-                                 l <- length(ii)
-                                 as.integer(seq(ii[1], ii[l], length.out = min(l,nPoints)))
-                               }))
-
-            object <- object[i, ]
+                            recursive = FALSE)
             
+            i <- unlist(lapply(iList,
+                               function(ii) {
+                                 if(is.null(ii))
+                                   return(NULL)
+                                 l <- length(ii)
+                                   as.integer(seq(ii[1], ii[l], length.out = min(l,nPoints)))
+                               }))
+            
+            if(!is.null(selectPoints))
+              i <- unique(sort(c(i, selectPoints)))
+            
+            object <- object[i, ]
             tmp <- as.matrix(getValue(object))
+            if(length(factors) > 0) 
+              tmp <- tmp[, -factors, drop = FALSE]
+
             rownames(tmp) <- NULL
             measureVar <- colnames(tmp)
-            plotData = data.frame(getId(object))
-            names(plotData)[1] <- object@idVar
             tmp <- cbind(tmp, data.frame(iSubset = I(i)))
+            
+            continuousPlotData <- data.frame(getId(object))
+            names(continuousPlotData)[1] <- object@idVar
+            
             if(isTRUE(allUnitData))            
-              plotData <- cbind(plotData, getUnitData(object)[as.numeric(getId(object)), , drop = FALSE])
-                                
-            plotData <- melt(cbind(plotData,
-                                   position = getPosition(object),
-                                   as.data.frame(tmp)),
-                             measure.vars = measureVar)
+              continuousPlotData <- cbind(continuousPlotData, getUnitData(object)[as.numeric(getId(object)), , drop = FALSE])
+            
+            continuousPlotData <- melt(cbind(continuousPlotData,
+                                             position = getPosition(object),
+                                             as.data.frame(tmp)),
+                                       measure.vars = measureVar)
+            
+            continuousPlotData$type <- as.factor("Continuous")
+
+            if("value" %in% names(continuousPlotData)) {
+              limits <- range(continuousPlotData$value)
+              breaks <- pretty(limits, 4)
+              labels <- as.character(breaks)
+            } else {
+              limits <- c(-1,0)
+              breaks <- numeric()
+              labels <- character()
+            }
+            
+            plotData <- new("ProcessPlotData",
+                            continuousPlotData = continuousPlotData,
+                            factorPlotData = factorPlotData,
+                            pointPlotData = data.frame(),
+                            position = "top",
+                            limits = limits,
+                            breaks = breaks,
+                            labels = labels,
+                            idVar = object@idVar,
+                            positionVar = object@positionVar)
             
             return(plotData)
           }
           )
 
+
 setMethod("plot", "ContinuousProcess",
           function(x, nPoints = 200, ...){
-            
-            facetFormula <- as.formula(paste(x@idVar, "~ ."))
-            group = paste(x@idVar, ":variable", sep = "")
-            
-            ggplot(data = getPlotData(x, nPoints = nPoints, ...),
-                   aes_string(x = "position", y = "value", colour = "variable", group = group)) +
-                     facet_grid(facetFormula, scales = "free_y") +
-                       scale_x_continuous(x@positionVar) +
-                         geom_line() 
+            plotData <- getPlotData(object = x, nPoints = nPoints, ...)
+            return(plot(plotData))
           }
           )
 
@@ -400,3 +502,21 @@ setMethod("summary", "ContinuousProcess",
                   apply(getValue(object), 2, summary))
            }
            )
+
+setMethod("updateProcessObject", "ContinuousProcess",
+          function(object, ...) {
+
+            continuousProcess <- new("ContinuousProcess",
+                                     unitData = object@unitData,
+                                     metaData = object@metaData,
+                                     iSubset = object@iSubset,
+                                     jSubset = object@jSubset,
+                                     idVar = object@idVar,
+                                     colNames = object@colNames,
+                                     positionVar = object@positionVar,
+                                     valueEnv = object@valueEnv,
+                                     factors = numeric())
+            validObject(continuousProcess)
+            return(continuousProcess)
+            }
+          )
