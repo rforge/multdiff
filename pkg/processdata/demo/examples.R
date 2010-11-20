@@ -52,7 +52,7 @@ plot(contExam, allUnitData = TRUE) + facet_grid(variable ~ gender)
 plot(subset(contExam, id == "A" & (time < 2 | time > 4)))
 
 ## Printing a MarkedPointProcess object gives additional
-## informations the number of points for each unit and each mark. 
+## informations on the number of points for each unit and each mark. 
 
 pointExam
 

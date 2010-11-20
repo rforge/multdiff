@@ -26,5 +26,6 @@ exportMethods("continuousProcess",
               "colNames<-",
               "plot",
               "subset",
+              "updateProcessObject",
               "[")
               
