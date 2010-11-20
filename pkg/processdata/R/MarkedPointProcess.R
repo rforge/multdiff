@@ -82,48 +82,13 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
             ii <- unlist(lapply(names(evalPosition), function(i) contPosition[[i]]$pointer[ii[[i]]]), use.names = FALSE)
 
             evalPosition <- do.call("rbind", evalPosition)                 
-            
-            ## ## Order within 'id'.
-            
-            ## ord <- tapply(evalPosition$position,
-            ##               evalPosition$id,
-            ##               order)
-            
-            ## ord <- unlist(lapply(levels(evalPosition$id),
-            ##                      function(id) which(evalPosition$id == id)[ord[[id]]]),
-            ##               use.names=FALSE)
-            
-            ## ## Dropping duplicated entries.
-            ## dup <- unlist(tapply(evalPosition$position,
-            ##                      evalPosition$id,
-            ##                      duplicated),
-            ##               use.names = FALSE)        
-            
-            ## evalPosition <- evalPosition[unlist(tapply(seq_along(evalPosition$id),
-            ##                                            evalPosition$id,
-            ##                                            function(s) s))[!dup], ]
-
+           
             pointProcess@pointPointer <- which(evalPosition$pointer < Inf)
-
-            
-            ## ii <- sapply(levels(evalPosition$id),
-            ##                    function(i) {
-            ##                      findInterval(evalPosition[ord, 'position'][evalPosition[ord,"id"] == i],
-            ##                                   c(contPosition[contId == i], Inf),
-            ##                                   all.inside=TRUE)},
-            ##             simplify=FALSE)
-
-            ## ii <- as.numeric(unlist(lapply(levels(evalPosition$id),
-            ##                                function(i) {
-            ##                                  which(contId == i)[ii[[i]]]
-            ##                                }),
-            ##                         use.names=FALSE))
           
             valueEnv <- new.env(parent = .GlobalEnv)
             valueEnv$id <- evalPosition$id
             valueEnv$position <- evalPosition$position
             valueEnv$value <- getValue(pointProcess)[ii, , drop=FALSE]
-            rownames(valueEnv$value) <- NULL
             valueEnv$i <- seq_along(evalPosition$id)
             valueEnv$j <- seq_len(dim(valueEnv$value)[2])
             pointProcess@valueEnv <- valueEnv
@@ -345,56 +310,63 @@ setMethod("getMarkValue", "MarkedPointProcess",
 
 setMethod("getPlotData", "MarkedPointProcess",
           function(object, y = '@mark', nPoints = 200, allUnitData = FALSE, ...){
-            plotData <- callGeneric(as(object, "ContinuousProcess"), nPoints = nPoints, allUnitData = allUnitData, ...)
-            plotPointData <- data.frame(id = getPointId(object),
-                                        position = getPointPosition(object),
-                                        variable = factor(getMarkType(object)))
-            if(isTRUE(y %in% names(getMarkValue(object))))
-              plotPointData <- cbind(plotPointData, getMarkValue(object))
+            if(length(getMarkType(object)) == 0) {
 
-            if(isTRUE(allUnitData))
-              plotPointData <- cbind(plotPointData, getUnitData(object)[as.numeric(getPointId(object)), , drop = FALSE])
-
-            plotData$contVariable <- plotData$variable
-            plotPointData$contVariable <- as.factor('points')
-            
-            if("value" %in% names(plotData)) { 
-              low <- signif(min(plotData$value),1)
-              high <- signif(max(plotData$value),1)
-              pLevels <- levels(plotData$variable)
+              plotData <- callGeneric(object = as(object, "ContinuousProcess"),
+                                      nPoints = nPoints,
+                                      allUnitData = allUnitData, ...)
+              
             } else {
-              low <- 0
-              high <- 1
-            }
+              
+              pointPlotData <- data.frame(id = getPointId(object),
+                                          position = getPointPosition(object),
+                                          variable = factor(getMarkType(object)))
+              
+              plotData <- callGeneric(object = as(object, "ContinuousProcess"),
+                                      nPoints = nPoints,
+                                      allUnitData = allUnitData,
+                                      selectPoints = getPointPointer(object), ...)
+              
+              if(isTRUE(y %in% names(getMarkValue(object))))
+                pointPlotData <- cbind(pointPlotData, getMarkValue(object))
 
-            if(y == "@mark") {
-                variableNum <- as.numeric(plotPointData$variable)
-                valueMark <- variableNum*(high-low)/(max(variableNum)+1)
-                plotPointData$value <- valueMark + high
-              } else if(y == object@idVar) {
-                variableNum <- as.numeric(plotPointData$id)
-                valueId <- variableNum*(high-low)/(max(variableNum)+1)
-                plotPointData$value <- valueId + high
-              } else if(isTRUE(y %in% names(getMarkValue(object)))) {
-                plotPointData$value <-  getMarkValue(object)[ ,y]
-              } else if("value" %in% names(plotData)) {
-                if(y == "@top") {
-                  plotPointData$value <- high + (high-low)/4
-                  plotPointData$contVariable <- factor(pLevels[1], levels = pLevels)
-                } else if(y == "@bottom") {
-                  plotPointData$value <- low - (high-low)/4
-                  plotPointData$contVariable <- factor(pLevels[length(pLevels)], levels = pLevels)
-                } else if(isTRUE(y %in% colnames(getValue(object)))) {
-                  plotPointData$value <- getValue(object)[getPointPointer(object), y]
-                  plotPointData$contVariable <- as.factor(y)
-                }
+              if(isTRUE(allUnitData))
+                pointPlotData <- cbind(pointPlotData, getUnitData(object)[as.numeric(getPointId(object)), , drop = FALSE])
+
+              pointPlotData$type <- as.factor('Track')
+
+              if(is.numeric(y)) {
+                pointPlotData$value <- y
+                plotData@breaks <- c(breaks, y)
+                plotData@labels <- c(labels, as.character(y))
               } else {
-                if(!is.numeric(y)) 
-                  plotPointData$value <- y
+                pointPlotData$value <- as.factor(y)
               }
+              
+              if(y == "@mark") 
+                pointPlotData$value <- pointPlotData$variable
+              if(y == object@idVar) 
+                pointPlotData$value <- pointPlotData$id
+              if(isTRUE(y %in% names(getMarkValue(object)))) 
+                pointPlotData$value <-  getMarkValue(object)[ ,y]
+              if(y == "@top")
+                pointPlotData$value <- pointPlotData$type
+              if(y == "@bottom") {
+                pointPlotData$value <- pointPlotData$type
+                plotData@position <- "bottom"
+              }
+              if("value" %in% names(plotData@continuousPlotData)) {
+                if(isTRUE(y %in% levels(plotData@continuousPlotData$variable))) 
+                  pointPlotData$value <- getValue(object)[getPointPointer(object), y]
+              }
+              
+                  
+              plotData@pointPlotData <- pointPlotData
+             
+            }
             
-            return(list(plotData = plotData, plotPointData = plotPointData))
-          }
+            return(plotData)
+          }  
           )
 
 setMethod("plot", c("MarkedPointProcess", "missing"),
@@ -403,79 +375,8 @@ setMethod("plot", c("MarkedPointProcess", "missing"),
 
 setMethod("plot", c("MarkedPointProcess", "character"),
           function(x, y, nPoints = 200, ...){
-            if(length(getMarkType(x)) == 0) {
-              ## There is only continuous process data in the data set.
-              p <- callGeneric(as(x, "ContinuousProcess"), nPoints = nPoints, ...)
-            } else {
-              plotData <- getPlotData(x, y, values = values, nPoints = nPoints, ...)
-              plotPointData <- plotData$plotPointData
-              plotData <- plotData$plotData
-              facetFormula <- as.formula(paste(x@idVar, "~ ."))
-
-
-              ## Setting up breaks, labels and limits
-              
-              if("value" %in% names(plotData)) { 
-                low <- signif(min(plotData$value),1)
-                high <- signif(max(plotData$value),1)
-                breaks <- pretty(c(low,high), n = 4)
-              } else {
-                low <- 0
-                high <- 1
-                breaks <- numeric()
-                limits <- NULL
-              }
-              
-              if(y == "@mark") {
-                varLevels <- levels(plotPointData$variable)
-                labels <- c(as.character(breaks), varLevels)
-                breaks <- c(breaks, high + seq_along(varLevels)*(high-low)/(length(varLevels)+1))
-                limits <- c(1,2)
-              } else if(y == x@idVar) {
-                idLevels <- levels(plotPointData$id)
-                labels <- c(as.character(breaks), idLevels)
-                breaks <- c(breaks, high + seq_along(idLevels)*(high-low)/(length(idLevels)+1))
-                limits <- c(1,2)
-              } else if(y == "@top") {
-                labels <- c(as.character(breaks), "points")
-                breaks <- c(breaks, high + (high-low)/4)
-              } else if(y == "@bottom") {
-                labels <- c(as.character(breaks), "points")
-                breaks <- c(breaks, low - (high-low)/4)
-              } else if(isTRUE(y %in% names(getMarkValue(x)))) {
-                breaks <- pretty(c(low,high,plotPointData$value), n = 5)
-                labels <- as.character(breaks)
-              } else if(isTRUE(y %in% colnames(getValue(x)))) {
-                breaks <- pretty(c(low,high,plotPointData$value), n = 5)
-                labels <- as.character(breaks)
-              } else {
-                breaks <- c(breaks, y)
-                labels <- as.character(breaks)
-              }              
-              
-              if("value" %in% names(plotData)) {
-                ## There is continuous process as well as point process data in the data set. 
-                group <- paste(x@idVar, ":variable", sep = "")
-                p <-  ggplot(data = plotData,  aes_string(x = "position", y = "value", colour = "variable", group = group)) +
-                  facet_grid(facetFormula, scales = "free_y") +
-                    scale_x_continuous(name = x@positionVar) +
-                        geom_point(data = plotPointData) +
-                          geom_line() +
-                            scale_y_continuous(breaks = breaks, name = "", labels = labels)
-                
-                
-              } else {
-                ## There is only point process data in the data set.
-                p <- ggplot(data = plotPointData, aes(x = position, y = value, colour = variable)) +
-                  scale_y_continuous(breaks = breaks, name = "", labels = labels, limits = limits) + 
-                    scale_x_continuous(name = x@positionVar) + 
-                      facet_grid(facetFormula, scales = "free_y") +
-                        geom_point()              
-              }
-
-            }
-              
-            return(p)
+            plotData <- getPlotData(object = x, y = y, nPoints = nPoints, ...)
+            return(plot(plotData))
           }
           )
 
@@ -575,4 +476,29 @@ setMethod("showData", "MarkedPointProcess",
             
             return(list(summary = summaryById, structure = structure))            
           }
+          )
+
+setMethod("updateProcessObject", "ContinuousProcess",
+          function(object, ...) {
+            pointProcess <- new("MarkedPointProcess",
+                                unitData = object@unitData,
+                                metaData = object@metaData,
+                                iSubset = object@iSubset,
+                                jSubset = object@jSubset,
+                                idVar = object@idVar,
+                                colNames = object@colNames,
+                                positionVar = object@positionVar,
+                                valueEnv = object@valueEnv,
+                                factors = numeric(),
+                                iPointSubset = object@iPointSubset,
+                                jPointSubset = object@jPointSubset,
+                                markVar =  object@markVar,
+                                pointPointer = object@pointPointer,
+                                pointProcessEnv = object@pointProcessEnv 
+                                ) 
+         
+            validObject(pointProcess)
+            return(pointProcess)
+            
+            }
           )
