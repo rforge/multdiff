@@ -42,23 +42,23 @@ setMethod(
               stop("'object' must contain 'data'")
             if (missing(parameters))
               {parameters <- object@parameters}
-            #validateParameters(object,parameters)
+            #validateParameters(object, parameters)
             pos <- getPosition(object@data)
             n <- length(pos)
             p <- dim(parameters$A)[1]
             delta <- pos[2:n]-pos[1:(n-1)]
             if (lossType == 1)
               {
-                tmpMean <- do.call(rbind,condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
+                tmpMean <- do.call(rbind, condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
                 return(sum((data[2:n,]-tmpMean)^2)/2)
               }
             if (lossType == 2)
               {
                 tmpMeanVar <- condMeanVar(object, parameters, x=data[1:(n-1),], t=delta,var=TRUE)
-                tmpMean <- do.call(rbind,tmpMeanVar$condMean)
-                tmpVar <- t(sapply(tmpMeanVar$condVar,function(y){return(y)}))
-                centeredObs <- data[2:n,]-tmpMean
-                wCenteredObs <- t(apply(cbind(tmpVar,centeredObs),1,function(y){
+                tmpMean <- do.call(rbind, tmpMeanVar$condMean)
+                tmpVar <- t(sapply(tmpMeanVar$condVar, function(y){return(y)})) ##??
+                centeredObs <- data[2:n,] - tmpMean
+                wCenteredObs <- t(apply(cbind(tmpVar,centeredObs), 1, function(y){
                   solve(matrix(y[1:(p*p)],nrow=p,ncol=p),matrix(y[(p*p+1):(p*(p+1))]))
                 }
                                         )

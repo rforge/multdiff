@@ -43,9 +43,10 @@ setClass(
 setMethod(
           "condMeanVar",
           "OUModel",
-          function(object,parameters,x,t,var=FALSE){
-            if (missing(parameters))
-              {parameters <- object@parameters}
+          function(object, parameters, x, t, var = FALSE){
+            if (missing(parameters)) 
+              parameters <- object@parameters
+            
             p <- dim(parameters$A)[1]
             if (!is.matrix(x))
               stop("'x' must be a matrix of class 'matrix'")
@@ -55,7 +56,7 @@ setMethod(
               stop("Mismatch in dimensions of 'x' and 't'")
             if (!is.logical(var))
               stop("'var' must be logical")
-            if (var==FALSE)
+            if (!var) ## Don't compute the conditional variance
               {
                 tmpMean <- apply(cbind(x,t),1,function(y){
                   parameters$A + expm(y[p+1]*parameters$B)%*%(matrix(y[1:p])-parameters$A)
@@ -63,7 +64,7 @@ setMethod(
                     )
                 return(list(condMean = unname(split(tmpMean, col(tmpMean)))))
               }
-            if (var==TRUE)
+            if (var)
               {
                 n <- length(t)
                 f <- factor(t)
@@ -120,12 +121,12 @@ setMethod("gradient",
             pos <- getPosition(object@data)
             n <- length(pos)
             p <- dim(parameters$A)[1]
-            delta <- pos[2:n]-pos[1:(n-1)]
-            tmpMean <- do.call(rbind,condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
-            centeredObs <- data[2:n,]-tmpMean
+            delta <- diff(pos)
+            tmpMean <- do.call(rbind, condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
+            centeredObs <- data[2:n,] - tmpMean
             if (lossType==1){
-              if (length(unique(delta))!=1){
-                diffExpm <- t(apply(cbind(data[2:n,],centeredObs,delta),1,function(y){
+              if (length(unique(delta)) != 1){
+                diffExpm <- t(apply(cbind(data[1:(n-1),],centeredObs,delta),1,function(y){
                   E <- (matrix(y[1:p])-parameters$A)%*%matrix(y[(p+1):(2*p)], nrow=1)
                   return(expmFrechet(y[2*p+1]*parameters$B,y[2*p+1]*E)$Lexpm)
                   }
@@ -140,7 +141,7 @@ setMethod("gradient",
                   {invisible(list(A=A, B=B))}
                 }
               else {
-                tmpE <- apply(cbind(data[2:n,],centeredObs),1,function(y){
+                tmpE <- apply(cbind(data[1:(n-1),],centeredObs),1,function(y){
                   (matrix(y[1:p])-parameters$A)%*%matrix(y[(p+1):(2*p)],nrow=1)
                   }
                               )
