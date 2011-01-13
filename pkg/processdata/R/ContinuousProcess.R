@@ -1,121 +1,284 @@
+## setIs("ContinuousProcess", "list",
+##       coerce = function(from, to) {
+##         to <- c(list(getId(from),
+##                      getPosition(from)),
+##                 getColumns(from, which(getType(from) %in% c("factor", "numeric")), drop = FALSE))
+##         names(to)[1:2] <- c(from@idVar, from@positionVar)
+##         return(to)
+##       },
+##       replace = function(from, value) {
+##         stop("Cannot replace slots and values in an object of class 'ContinuousProcess' from a list")
+##       }
+##       )
+
+setAs("ContinuousProcess", "list",
+      def = function(from) {        
+        to <- c(list(getId(from),
+                     getPosition(from)),
+                getColumns(from, c(colNames(from, "numeric"), colNames(from, "factor")), drop = FALSE))
+        names(to)[1:2] <- c(from@idVar, from@positionVar)
+        return(to)
+      }
+      )
+        
 setMethod("continuousProcess", "data.frame",
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...) {
+            callGeneric(as.list(continuousData), unitData = unitData, metaData = metaData, positionVar = positionVar, idVar = idVar, .dont_test_dimensions = TRUE, ...)
+          }
+          )
+
+setMethod("continuousProcess", "numeric",
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...) {
+            callGeneric(list(V = continuousData), unitData = unitData, metaData = metaData, positionVar = positionVar, idVar = idVar, .dont_test_dimensions = TRUE, ...)
+          }
+          )
+
+setMethod("continuousProcess", "matrix",
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...) {
+            callGeneric(as.data.frame(continuousData), unitData = unitData, metaData = metaData, positionVar = positionVar, idVar = idVar, .dont_test_dimensions = TRUE, ...)
+          }
+          )
+
+setMethod("continuousProcess", "ContinuousProcess",
+          function(continuousData, ...) {
+            contData <- as(continuousData, "list")
+                               
+            callGeneric(continuousData = contData,
+                        unitData = getUnitData(continuousData),
+                        metaData = continuousData@metaData,
+                        positionVar = continuousData@positionVar,
+                        idVar = continuousData@idVar,
+                        .dont_test_dimensions = TRUE)
+          }
+          )
+                   
+setMethod("continuousProcess", "list",
           function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...){
-            if(!is.data.frame(continuousData))
-              stop("The 'initdata' needs to be a data frame")
+
+
+            ## Checking, if required, if the dimensions are correct
+            ## and that there are names on all entries in the list.
             
-            colNames <- names(continuousData)
+            args <- list(...)
+            if(!(".dont_test_dimensions" %in% names(args) &&
+                 args$.dont_test_dimensions)) {
+              ## TODO: What to do with a list containing combinations of vectors and matrices?
+              ## l <- sapply(continuousData, function(x) dim(x)[1], USE.NAMES = FALSE)
+              ## l[sapply(l, is.null)] <- sapply(continuousData[sapply(l, is.null)],
+              ##                                length, USE.NAMES = FALSE)
+              ## numericNames <- list()
+              ##           for(i in which(numerics)) {
+              ##             if(is.null(dim(value[[i]]))) {
+              ##               numericNames[[i]] <- names(value)[i]
+              ##             } else {
+              ##               if(is.null(colnames(value[[i]]))) {
+              ##                 numericNames[[i]] <- paste(names(value)[i], ".",
+              ##                                            seq_len(dim(value[[i]])[2]), sep = "")
+              ##               } else {
+              ##                 numericNames[[i]] <- colnames(value[[i]])
+              ##               }
+              ##               emptyNames <- numericNames[[i]] == ""
+              ##               if(any(emptyNames)) 
+              ##                 numericNames[[i]][emptyNames] <- paste(names(value)[i], ".",
+              ##                                                        seq_len(sum(emptyNames)), sep = "")
+              ##             }
+              ##           }
+              ##           numericNames <- unlist(numericNames)
+              l <- sapply(continuousData, length, USE.NAMES = FALSE)
+##              l <- unlist(l)
+              if(any(l != l[1]))
+                stop("The list entries in 'continuousData' are not of the same length.")
+              if(is.null(names(continuousData))) {
+                colNames <- paste("V", seq_along(continuousData), sep = "")
+              } else {
+                colNames <- names(continuousData)
+              }
+              emptyNames <- colNames == ""
+              if(any(emptyNames)) 
+                colNames[emptyNames] <- paste("V", seq_len(sum(emptyNames)), sep = "")
+                                
+                names(continuousData) <- colNames
+            } else {
+              colNames <- names(continuousData)
+            }
+
+            ## Extracting or setting the 'id' variable.
             if(!(idVar %in% colNames)) {
-              id <- factor(rep(1, dim(continuousData)[1]))
+              if(is.null(dim(continuousData[[1]]))) {
+                d1 <- length(continuousData[[1]])
+              } else {
+                d1 <- dim(continuousData[[1]])[1]
+              }
+              id <- factor(rep("1", d1), levels = "1")
             } else {
-              id <- factor(continuousData[ ,idVar])
+              id <- as.factor(continuousData[[idVar]])
             }
+            
+            ## Sorting the rows if needed.
+            ord <- NULL
+            if(is.unsorted(id)) {
+              ord <- order(id)              
+              id <- id[ord]
+            }
+            idLevels <- split(seq_along(id), id)
+##            idLevels <- sapply(levels(id), function(i) which(levels(id)[id] == i),
+##                               simplify = FALSE)
+
+            ## Extracting or setting the 'position' variable
             if(!(positionVar %in% colNames)) {
-              position <- as.numeric(sapply(levels(id), function(i) seq_along(id[id == i])))
+              position <- numeric(length(id))
+              for(v in levels(id)) {
+                position[idLevels[[v]]] <- seq_along(idLevels[[v]])
+              }
             } else {
-              position <- continuousData[ ,positionVar]
+              if(is.null(ord)) {
+                position <- continuousData[[positionVar]]
+              } else {
+                position <- continuousData[[positionVar]][ord]
+              }
             }
+            
+            ## Sorting the rows if needed
+            if(any(sapply(levels(id),
+                          function(i) is.unsorted(position[idLevels[[i]]])))) {
+              ## Computing the correct order within id.
+              ord2 <- unlist(lapply(levels(id),
+                                   function(i) idLevels[[i]][order(position[idLevels[[i]]])]),
+                            use.names=FALSE)
+              position <- position[ord2]
+              if(!is.null(ord)) {
+                ord <- ord[ord2]
+              } else {
+                ord <- ord2
+              }
+            }
+
+            ## Setting up the unit data
             if(dim(unitData)[2] == 0)
               unitData <- data.frame(row.names = levels(id))
             if(idVar %in% names(unitData)) {
-              rownames(unitData) <- unitData[ , names(unitData) == idVar]
+              row.names(unitData) <- unitData[ , names(unitData) == idVar]
               unitData <- unitData[ , names(unitData) != idVar, drop = FALSE]
             }
-
+            if(!all(levels(id) %in% row.names(unitData))) {
+              stop("The 'unitData' data frame does not contain data for all units.")
+            }
             unitData <- unitData[levels(id), , drop = FALSE] 
-
-            if(any(rownames(unitData) != levels(id))) {
-              ord <- match(levels(id), rownames(id))
+            if(any(row.names(unitData) != levels(id))) {
+              ord <- match(levels(id), row.names(unitData))
               unitData <- unitData[ord, ]
             }
-            
-            if(any(tapply(position, id, is.unsorted))) {
-              ord <- tapply(position, id, order)
-              ord <- unlist(lapply(levels(id),
-                                   function(i) which(id == i)[ord[[i]]]),
-                            use.names=FALSE)
-              value <- continuousData[ord, !(colNames %in% c(idVar,positionVar)), drop = FALSE]
-            } else {
-              value <- continuousData[ , !(colNames %in% c(idVar,positionVar)), drop = FALSE]
-            }
 
+            ## Setting up the environment for data storage.
             valueEnv <- new.env(parent = .GlobalEnv)
             valueEnv$id <- id
             valueEnv$position <- position
-            if(all(sapply(value, class) %in% c("integer", "numeric"))){
-              valueEnv$value <- Matrix(as.matrix(value))
-              factors <- numeric()
-            } else {
-              valueEnv$value <- model.Matrix(~., data = value,
-                                             sparse = TRUE,
-                                             row.names = FALSE)
-              assign <- attr(valueEnv$value, "assign")
-              intercept <- which(assign == 0)
-              valueEnv$value <- valueEnv$value[, -intercept]
-              assign <- assign[-intercept]
-              factors <- which(assign %in% which(!(sapply(value, class) %in% c("integer", "numeric"))))
-            }
-              
-            valueEnv$i <- seq_along(id)
-            valueEnv$j <- seq_len(dim(valueEnv$value)[2])
-
-            colNames <- c(names(unitData), colnames(valueEnv$value))
+            varNames <- colNames[!(colNames %in% c(idVar, positionVar))]
+            numerics <- sapply(continuousData, is.numeric)[!(colNames %in% c(idVar, positionVar))]
             
-            new("ContinuousProcess",
-                unitData = unitData,
-                metaData = metaData,
-                iSubset = -1L,
-                jSubset = -1L,
-                idVar = idVar,
-                colNames = colNames,
-                positionVar = positionVar,
-                valueEnv = valueEnv,
-                factors = factors)
+            if(is.null(ord)) {
+              for(v in varNames) {
+                assign(paste("var", "_", v, sep = ""),
+                       continuousData[[v]], envir = valueEnv)
+              }
+            } else {
+              for(v in varNames) {
+                assign(paste("var", "_", v, sep = ""),
+                       continuousData[[v]][ord], envir = valueEnv)
+              }
+            }
+            ## colnames(valueEnv$value) <- numericNames
+            ## valueEnv$unitData <- unitData
+                   
+            object <- new("ContinuousProcess",
+                          metaData = metaData,
+                          equiDistance = 0,
+                          iSubset = -1L,
+                          jSubset = -1L,
+                          idVar = idVar,
+                          positionVar = positionVar,
+                          factorColNames = varNames[!numerics],
+                          numericColNames = varNames[numerics],
+                          valueEnv = valueEnv)
+
+            setUnitData(object) <- unitData
+            return(object)
+          }
+          )
+
+setMethod("colNames", c("ContinuousProcess", "missing"),
+          function(object, type, ...) {
+            colnames <- c(object@numericColNames, object@factorColNames)
+            if(!identical(object@jSubset[1], -1L)) 
+              colnames <- colnames[object@jSubset]
+
+            colnames <- c(callNextMethod(object), colnames)
+            return(colnames)
+          }
+          )
+
+
+setMethod("colNames", c("ContinuousProcess", "character"),
+          function(object, type, ...) {
+            colnames <- callGeneric(object = object, ...)
+            if(type == "factor") {
+              colnames <- colnames[colnames %in% object@factorColNames]
+            } else if(type == "numeric") {
+              colnames <- colnames[colnames %in% object@numericColNames]              
+            } else {
+              colnames <- callGeneric(as(object, "ProcessData"), type = type, ...) 
+            }
+            return(colnames)
           }
           )
 
 setMethod("dim", "ContinuousProcess",
           function(x) {
-            d1 <- length(getId(x))
-            d2 <- length(colNames(x))
+            if(identical(x@iSubset[1], -1L)) {
+              d1 <- length(x@valueEnv$id)
+            } else {
+              d1 <- length(x@iSubset)
+            }
+
+            if(identical(x@jSubset[1], -1L)) {
+              d2 <- length(x@factorColNames) + length(x@numericColNames) 
+            } else {
+              d2 <- length(x@jSubset)
+            }
+            d2 <- d2 + callNextMethod(x)[2]
+
             return(c(d1,d2))
           }
           )
 
-setMethod("colNames", "ContinuousProcess",
-          function(object, ...) {
-            return(object@colNames)
-          }
-          )
-
-setReplaceMethod("colNames", c(object = "ContinuousProcess", value = "character"),
-                 function(object, value) {
-                   object@colNames <- value
-                   return(object)
-                 }
-                 )
-
 setMethod("iSubset", "ContinuousProcess",
           function(object) {
-            i <- object@valueEnv$i
-            if(!isTRUE(object@iSubset == -1L))
-              i <- i[object@iSubset]
+            if(identical(object@iSubset[1], -1L)) {
+              i <- seq_along(object@valueEnv$id)
+            } else {
+              i <- object@iSubset
+            }
+              
             return(i)
           }
           )
 
 setMethod("jSubset", "ContinuousProcess",
           function(object) {
-            j <- object@valueEnv$j
-            if(!isTRUE(object@jSubset == -1L))
-              j <- j[object@jSubset]
-             
+            if(identical(object@jSubset[1], -1L)) {
+              j <- seq_len(length(object@factorColNames) + length(object@numericColNames))
+            } else {
+              j <- object@jSubset
+            }
+              
             return(j)
           }
           )
 
-setReplaceMethod("iSubset", c(object = "ContinuousProcess", value = "ANY"),
+setReplaceMethod("iSubset", c(object = "ContinuousProcess", value = "numeric"),
                  function(object, value) {
-                   if(length(value) == length(object@valueEnv$id)) {
+                   if(length(value) == length(object@valueEnv$id) && 
+                      identical(value, seq_along(object@valueEnv$id))) {
                      object@iSubset <- -1L
                    } else {              
                      object@iSubset <- value
@@ -125,9 +288,10 @@ setReplaceMethod("iSubset", c(object = "ContinuousProcess", value = "ANY"),
                  }
                  )
 
-setReplaceMethod("jSubset", c(object = "ContinuousProcess", value = "ANY"),
+setReplaceMethod("jSubset", c(object = "ContinuousProcess", value = "numeric"),
                  function(object, value) {
-                   if(length(value) == dim(object@valueEnv$value)[2]) {
+                   d2 <- length(object@numericColNames) + length(object@factorColNames)
+                   if(length(value) == d2 && identical(value, seq_len(d2))) {
                      object@jSubset <- -1L
                    } else {              
                      object@jSubset <- value
@@ -145,77 +309,106 @@ setMethod("[", c(x = "ContinuousProcess", i = "integer", j = "missing"),
           }
           )
 
-setMethod("[", c(x = "ContinuousProcess", i = "numeric", j = "missing"),
-          function(x, i, j, ... , drop = FALSE) {
-            i <- as.integer(i)
-            x <- callGeneric(x, i, , drop = drop)
-            return(x)
-          }
-          )
 
-setMethod("[", c(x = "ContinuousProcess", i = "logical", j = "missing"),
-          function(x, i, j, ... , drop = FALSE) {
-            i <- iSubset(x)[i]
-            x <- callGeneric(x, i, , drop = drop)
-            return(x)
-          }
-          )
-
-setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "integer"),
-          function(x, i, j, ... , drop = FALSE) {
-            colNames <- colNames(x)[j]
-            jj <- colnames(getValue(x)) %in% colNames
-            jSubset(x) <- jSubset(x)[jj]            
-            j <- colNames(as(x, "ProcessData")) %in% colNames
-            as(x, "ProcessData")  <- callGeneric(as(x, "ProcessData"), ,j, drop = drop)
-            colNames(x) <- colNames
-            return(x)
-          }
-          )
-
-setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "numeric"),
-          function(x, i, j, ... , drop = FALSE) {
-            j <- as.integer(j)
-            x <- callGeneric(x, , j, drop = drop)
-            return(x)
-          }
-          )
-
-setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "logical"),
-          function(x, i, j, ... , drop = FALSE) {
-            j <- seq_along(colNames(x))[j]
-            x <- callGeneric(x, , j, drop = drop)
-            return(x)
-          }
-          )
+## setMethod("[", c(x = "ContinuousProcess", i = "numeric", j = "missing"),
+##           function(x, i, j, ... , drop = FALSE) {
+##             i <- as.integer(i)
+##             x <- callGeneric(x, i, , drop = drop)
+##             return(x)
+##           }
+##           )
 
 setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "character"),
-          function(x, i, j, ... , drop = FALSE) {
-            j <- colNames(x) %in% j
-            x <- callGeneric(x, , j, drop = drop)
-            return(x)
-          }
-          )
+         function(x, i, j, ... , drop = FALSE) {
+           if(drop && length(j) == 1) {
+             return(getColumns(x, j))
+           } else {
+             as(x, "ProcessData")  <- callGeneric(as(x, "ProcessData"), ,j)
+             jSubset(x) <- which(c(x@numericColNames, x@factorColNames) %in% j)
+           }
+          
+           return(x)
+         }
+         )
 
-setMethod("[", "ContinuousProcess",
-          function(x, i, j, ... , drop = FALSE) {
 
-            if(!(class(i) %in% c("logical", "numeric", "integer")))
-              stop("i must be a 'logical' or a 'numeric' vector.")
-            if(!(class(j) %in% c("logical", "numeric", "integer", "character")))
-              stop("j needs to be a 'logical', a 'numeric' or a 'character' vector.")
+setMethod("getColumns", c("ContinuousProcess", "character"),
+          function(object, j, drop = TRUE) {
+            checkColumns <- j %in% colNames(object)
+            if(!all(checkColumns)) 
+              stop(paste(c("No column '", j[!checkColumns][1], "' in the object."),
+                         collapse = ""), call. = FALSE)
             
-            x <- callGeneric(x, i, , drop = drop)
-            x <- callGeneric(x, , j, drop = drop)
-            return(x)
+            if(length(j) == 1 && drop) {
+              if(j %in% object@unitColNames) {
+                column <- object@valueEnv$unitData[getId(object, drop = FALSE), j]
+              } else {
+                column <- get(paste("var", "_", j, sep = ""),
+                              object@valueEnv)
+                if(!identical(object@iSubset[1], -1L)) 
+                  column <- column[object@iSubset]
+              }
+            } else {
+              column <- list()
+              for(jj in j) {
+                if(jj %in% object@unitColNames) {
+                  column[[jj]] <- object@valueEnv$unitData[getId(object, drop = FALSE), jj]
+                } else {
+                  column[[jj]] <- get(paste("var", "_", jj, sep = ""),
+                                      object@valueEnv)
+                  if(!identical(object@iSubset[1], -1L)) 
+                    column[[jj]] <- column[[jj]][object@iSubset]
+                }
+              }
+            }
+              
+            return(column)
           }
           )
 
-setMethod("[", c("ContinuousProcess", "missing", "missing", "missing"),
-          function(x, i, j, ... , drop) {
-            return(x)
-          }
-          )
+## setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "numeric"),
+##           function(x, i, j, ... , drop = FALSE) {
+##             j <- as.integer(j)
+##             x <- callGeneric(x, , j, drop = drop)
+##             return(x)
+##           }
+##           )
+
+## setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "logical"),
+##           function(x, i, j, ... , drop = FALSE) {
+##             j <- seq_along(colNames(x))[j]
+##             x <- callGeneric(x, , j, drop = drop)
+##             return(x)
+##           }
+##           )
+
+## setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "character"),
+##           function(x, i, j, ... , drop = FALSE) {
+##             j <- colNames(x) %in% j
+##             x <- callGeneric(x, , j, drop = drop)
+##             return(x)
+##           }
+##           )
+
+## setMethod("[", "ContinuousProcess",
+##           function(x, i, j, ... , drop = FALSE) {
+
+##             if(!(class(i) %in% c("logical", "numeric", "integer")))
+##               stop("i must be a 'logical' or a 'numeric' vector.")
+##             if(!(class(j) %in% c("logical", "numeric", "integer", "character")))
+##               stop("j needs to be a 'logical', a 'numeric' or a 'character' vector.")
+            
+##             x <- callGeneric(x, i, , drop = drop)
+##             x <- callGeneric(x, , j, drop = drop)
+##             return(x)
+##           }
+##           )
+
+## setMethod("[", c("ContinuousProcess", "missing", "missing", "missing"),
+##           function(x, i, j, ... , drop) {
+##             return(x)
+##           }
+##           )
 
 setMethod("subset", "ContinuousProcess",
           function(x, subset, select, ...) {
@@ -223,24 +416,26 @@ setMethod("subset", "ContinuousProcess",
               r <- TRUE 
             else {
               e <- substitute(subset)
-              unitVar <- names(getUnitData(x))
               variables <- all.vars(e)
-              unitVariables <- variables[variables %in% unitVar]
-              variables <- variables[!(variables %in% unitVariables)]
-              variables <- variables[!(variables %in% c(x@idVar, x@positionVar))]
-              frame <- data.frame(getId(x), getPosition(x))
-              frame <- cbind(frame,
-                             as.data.frame(as.matrix(getValue(x)[ ,variables])),
-                             getUnitData(x)[as.numeric(getId(x)), unitVariables])
-              
-              ## The construction assumes that the level of id and
-              ## column id in unitData are in the same order. This is
-              ## assumed and enforced by the validity check. 
 
-              names(frame) <- c(x@idVar, x@positionVar, variables, unitVariables)
+              ## Environment created for evaluation and populated with
+              ## relevant variables.
               
-              r <- eval(e, frame, parent.frame())
+              tmpEnv <- new.env(parent = .GlobalEnv)
+              if(identical(x@iSubset[1], -1L)) {
+                assign(x@idVar, x@valueEnv$id, envir = tmpEnv)
+                assign(x@positionVar, x@valueEnv$position, envir = tmpEnv)
+              } else {
+                if(x@idVar %in% variables) 
+                  assign(x@idVar, getId(x), envir = tmpEnv)
+                if(x@positionVar %in% variables) 
+                  assign(x@positionVar, getPosition(x), envir = tmpEnv)
+              }
               
+              for(v in variables[!(variables %in% c(x@idVar, x@positionVar))]) {
+                assign(v, getColumns(x, v), envir = tmpEnv) 
+              }
+              r <- eval(e, tmpEnv, parent.frame())
               if (!is.logical(r)) 
                 stop("'subset' must evaluate to logical")
               r <- r & !is.na(r)
@@ -257,11 +452,11 @@ setMethod("subset", "ContinuousProcess",
           )
 
 setMethod("getId", "ContinuousProcess",
-          function(object, ...) {
-            if(isTRUE(object@iSubset == -1L)) {
+          function(object, drop = TRUE, ...) {
+            if(identical(object@iSubset[1], -1L)) {
               value <- object@valueEnv$id
             } else {
-              value <- object@valueEnv$id[iSubset(object), drop =TRUE]
+              value <- object@valueEnv$id[iSubset(object), drop = drop]  ## Default, dropping unused factor levels.
             }
             
             return(value)
@@ -270,81 +465,135 @@ setMethod("getId", "ContinuousProcess",
 
 setMethod("getFactors", "ContinuousProcess",
           function(object, ...) {
-            factors <- numeric()
-            tryCatch(factors <- object@factors,
-                     error = function(e) {
-                       warning("Object is deprecated and lacks the factor slot. Either recreate the\n object from scratch or try the 'updateProcessObject' function.", call. = FALSE)}
-                     )
-            if(!isTRUE(object@jSubset == -1L)) {
-              factors <- which(jSubset(object) %in% factors)
-            }
-            
+            factors <- getColumns(object, colNames(object, "factor"), drop = FALSE)
+           
             return(factors)
            }
           )
 
-setMethod("getValue", "ContinuousProcess",
-          function(object, ...) {
-            if(isTRUE(object@iSubset == -1L && object@jSubset == -1L)) {
-              value <- object@valueEnv$value
-            } else if(isTRUE(object@iSubset == -1L)) {
-              value <- object@valueEnv$value[ ,jSubset(object), drop = FALSE]
-            } else if(isTRUE(object@jSubset == -1L)) {
-              value <- object@valueEnv$value[iSubset(object), , drop = FALSE]
-            } else {
-              value <- object@valueEnv$value[iSubset(object), jSubset(object), drop = FALSE]
-            }
+## setMethod("getType", "ContinuousProcess",
+##           function(object, ...) {
+##             if(identical(object@jSubset[1], -1L)) {
+##                type <- object@type
+##             } else {
+##               type <- object@type[object@jSubset]
+##             }
             
-            return(value)
+##             return(type)
+##           }
+##           )
+          
+setMethod("getNumerics", "ContinuousProcess",
+          function(object, ...) {
+            columns <- getColumns(object, colNames(object, "numeric"), drop = FALSE)
+            if(length(columns) == 0) {
+              columns <- matrix(nrow = dim(object)[1], ncol = 0)
+            } else {
+              columns <- do.call(cbind, columns)
+            }
+            return(columns)
           }
           )
 
+setMethod("getValue", "ContinuousProcess",
+          function(object, ...) {
+            getNumerics(object, ...)
+          }
+          )
+                   
+## setMethod("getValue", "ContinuousProcess",
+##           function(object, ...) {
+##             if(identical(object@iSubset, -1L)) {
+##               if(identical(object@jSubset, -1L)) {
+##                 value <- object@valueEnv$value
+##               } else {
+##                 j <- colnames(object@valueEnv$value) %in% colNames(object) 
+##                 value <- object@valueEnv$value[ , j, drop = FALSE]
+##             }
+##             } else {
+##               if(identical(object@jSubset, -1L)) {
+##                 value <- object@valueEnv$value[object@iSubset, , drop = FALSE]
+##               } else {
+##                 j <- colnames(object@valueEnv$value) %in% colNames(object)
+##                 value <- object@valueEnv$value[object@iSubset, j, drop = FALSE]
+##               }
+##             }
+            
+##             return(value)
+##           }
+##           )
+
 setMethod("getPlotData", "ContinuousProcess",
-          function(object, nPoints = 200, allUnitData = FALSE, selectPoints = NULL, ...){
+          function(object, y = '@bottom', nPoints = 200, allUnitData = FALSE, selectPoints = NULL, dropLevels = 1, ...){
+
+            ## The computation of the data needed for producing a plot
+            ## is split into two parts. First all 'factor' variables
+            ## are extracted, and a data frame is computed with the
+            ## information of shifts in the factor values. The result
+            ## is a type of 'run length encoding' useful for plotting
+            ## horizontal lines, or bars, at the different levels of
+            ## the factor in a non-anticipating "limits from the left,
+            ## continuous from the right" point of view.
+            
             factorPlotData <- data.frame()
             factors <- getFactors(object)
             if(length(factors) > 0) {
 
-              patterns <- apply(getValue(object)[, factors, drop = FALSE] != 0, 2, function(x) {
-                tmp <- tapply(seq_along(x), getId(object), function(j) {
-                  z <- x[j]
-                  n <- length(z)
-                  i <- which(z[-1] != z[-n])
-                  names(i) <- NULL
-                  i[!z[i]] <-  i[!z[i]] + 1
-                  if(z[1]) 
-                    i <- c(1,i)
-                  if(z[n])
-                    i <- c(i,n)
-                  if(length(i) == 0)
-                    i <- NA
-                  return(getPosition(object)[j][i])
-                })
-                attributes(tmp) <- NULL
-                names(tmp) <- levels(getId(object))
-                return(tmp)
-              })              
-              
-              uniqueNames <- unlist(lapply(patterns, function(y) {
-                lapply(y, function(z) {
-                  i <- seq(1,length(z),2)
-                  return(rep(z[i], each = 2, length.out = length(z)))
-                })
-              }), use.names = FALSE)
+              ## The runs are computed for each factor.
+              ## TODO: don't extract using getFactors, getValue or getNumerics.
+              ## Use the column specific extractor?
+             
+              lenId <- cumsum(table(getId(object)))
+              patterns <- sapply(names(factors),
+                                 function(name) {
+                                   x <- factors[[name]]
+                                   i <- sort(unique(c(which(x[-1L] != x[-length(x)]), lenId)))
+                                   uniqueNames <- seq_along(i)
+                                   n <- length(i)
+                                   uniqueNames <- paste(name, c(uniqueNames, uniqueNames[-n]+1), sep = "")
+                                   
+                                   i <- c(i, i[-n]+1)
+                                   
+                                   orderI <- order(i)
+                                   i <- i[orderI]
+                                   uniqueNames <- uniqueNames[orderI]
+                                   
+                                   i <- c(1,i)
+                                   uniqueNames <- c(paste(name, "1", sep = ""),
+                                                    uniqueNames)
+                                   
+                                 
+                                   result <- data.frame(.index = i,
+                                                        .group = uniqueNames,
+                                                        x[i])
+                                   names(result)[3] <- name
+                                   if(is.list(dropLevels))
+                                     dropLevels <- dropLevels[[name]]
+                                   
+                                   return(result[!(as.numeric(x[i]) %in% dropLevels), , drop = FALSE])
+                                 },
+                                 simplify = FALSE)
 
-              patterns <- melt(patterns)
-              names(patterns) <- c("position", "id", "variable")
-              patterns$id <- factor(patterns$id, levels = levels(getId(object)))
-              patterns$variable <- factor(patterns$variable)              
-              patterns$group <- paste(patterns$id,
-                                      patterns$variable,
-                                      uniqueNames, sep = "")
-
-              factorPlotData <- patterns[!is.na(patterns$position), ]
-              factorPlotData$value <- factorPlotData$variable
-              
+              ## Removing empty data frames in the list
+              patterns <- patterns[sapply(patterns, function(frame) dim(frame)[1] != 0)]             
+              patterns <- melt(patterns, id.vars = c(1,2))
+              index <- patterns$.index
+              id = getId(object)
+              leftEndIndex <- seq(2, length(index), 2)
+              i <- id[index[leftEndIndex]] == id[index[leftEndIndex]+1]
+              i <- i & !is.na(i)
+              index[leftEndIndex][i] <- index[leftEndIndex][i]+1
+                          
+              factorPlotData <- data.frame(id = id[index],
+                                           position = getPosition(object)[index],
+                                           group = patterns$.group,
+                                           variable = patterns$variable,
+                                           value = paste(patterns$variable,
+                                             patterns$value,
+                                             sep = "_"))
+                          
               if(isTRUE(allUnitData))            
-                factorPlotData <- cbind(plotData, getUnitData(object)[as.numeric(plotData$id), , drop = FALSE])
+                factorPlotData <- cbind(factorPlotData, getUnitData(object)[factorPlotData$id, , drop = FALSE])
 
               factorPlotData$type <- as.factor("Track")
               
@@ -368,11 +617,8 @@ setMethod("getPlotData", "ContinuousProcess",
               i <- unique(sort(c(i, selectPoints)))
             
             object <- object[i, ]
-            tmp <- as.matrix(getValue(object))
-            if(length(factors) > 0) 
-              tmp <- tmp[, -factors, drop = FALSE]
-
-            rownames(tmp) <- NULL
+            tmp <- getNumerics(object)
+           
             measureVar <- colnames(tmp)
             tmp <- cbind(tmp, data.frame(iSubset = I(i)))
             
@@ -380,7 +626,7 @@ setMethod("getPlotData", "ContinuousProcess",
             names(continuousPlotData)[1] <- object@idVar
             
             if(isTRUE(allUnitData))            
-              continuousPlotData <- cbind(continuousPlotData, getUnitData(object)[as.numeric(getId(object)), , drop = FALSE])
+              continuousPlotData <- cbind(continuousPlotData, getUnitData(object)[getId(object), , drop = FALSE])
             
             continuousPlotData <- melt(cbind(continuousPlotData,
                                              position = getPosition(object),
@@ -394,16 +640,24 @@ setMethod("getPlotData", "ContinuousProcess",
               breaks <- pretty(limits, 4)
               labels <- as.character(breaks)
             } else {
-              limits <- c(-1,0)
+              limits <- c(-1, 0)
               breaks <- numeric()
               labels <- character()
             }
+
+            
+             if(y == "@top") {
+               y <- "top"
+             } else {
+               y <- "bottom"
+             }
+             
             
             plotData <- new("ProcessPlotData",
                             continuousPlotData = continuousPlotData,
                             factorPlotData = factorPlotData,
                             pointPlotData = data.frame(),
-                            position = "top",
+                            position = "bottom",
                             limits = limits,
                             breaks = breaks,
                             labels = labels,
@@ -414,17 +668,30 @@ setMethod("getPlotData", "ContinuousProcess",
           }
           )
 
+setMethod("plot", c("ContinuousProcess", "missing"),
+          function(x, y, nPoints = 200, ...){
+            plotData <- getPlotData(object = x, y = "@bottom", nPoints = nPoints, ...)
+            return(plot(plotData, ...))
+          }
+          )
 
-setMethod("plot", "ContinuousProcess",
-          function(x, nPoints = 200, ...){
-            plotData <- getPlotData(object = x, nPoints = nPoints, ...)
-            return(plot(plotData))
+setMethod("plot", c("ContinuousProcess", "character"),
+          function(x, y, nPoints = 200, ...){
+            plotData <- getPlotData(object = x, y = y, nPoints = nPoints, ...)
+            return(plot(plotData, ...))
+          }
+          )
+
+
+setMethod("plot", c("ContinuousProcess", "numeric"),
+          function(x, y, nPoints = 200, ...){
+            callGeneric(x = x, y = as.character(y), nPoints = nPoints, ...)
           }
           )
 
 setMethod("getPosition", "ContinuousProcess",
           function(object, ...) {
-            if(isTRUE(object@iSubset == -1L)) {
+            if(identical(object@iSubset[1], -1L)) {
               value <- object@valueEnv$position
             } else {
               value <- object@valueEnv$position[iSubset(object)]
@@ -440,43 +707,76 @@ setMethod("getTime", "ContinuousProcess",
            }
           )
 
-setMethod("showData", "ContinuousProcess",
+setMethod("summarizeData", "ContinuousProcess",
           function(object, ...) {
             unitData <- getUnitData(object)
-            id <- factor(getId(object))
+            id <- getId(object)
             if(length(id) > 0) {
               splitEntries <- split(seq_along(id), id)
               ranges <- lapply(splitEntries, function(e) signif(range(getPosition(object)[e]), 3))
               if(is.list(ranges)) {
                 positionSummary <- as.data.frame(sapply(ranges, function(r) paste("[", r[1],";",r[2],"]", sep="")), stringsAsFactors = FALSE) 
               } else {
-                positionSummary <- data.frame(1)[FALSE,]
+                positionSummary <- data.frame(1)[FALSE, ]
+              }
+              summaryById <- as.numeric(table(id))
+              sumVal <- list()
+              
+              for(j in colNames(object, "factor")) {
+                sumVal[[j]] <- rep("Fac", length(splitEntries))
+              }
+
+              for(j in colNames(object, "numeric")) {
+                column <- getColumns(object, j)
+                sumVal[[paste("mean(", j ,")", sep ="")]] <- 
+                  sapply(splitEntries, function(e) mean(column[e]))
               }
               
-              summaryById <- as.numeric(table(id))
-              firstEntries <- sapply(splitEntries, function(e) e[1])
-              values <- as.matrix(getValue(object))[firstEntries, , drop = FALSE]
-              summaryById <- cbind(summaryById,
-                                   positionSummary,
-                                   unitData,
-                                   as.data.frame(values))
-              colnames(summaryById)[1:2] <- c("grid points", paste(object@positionVar,"range"))
+              summaryById <- cbind(summaryById, positionSummary)
+
+              if(dim(unitData)[2] > 0)
+                summaryById <- cbind(summaryById, unitData)
+
+              if(length(sumVal) > 0)
+                summaryById <- cbind(summaryById, as.data.frame(sumVal, optional = TRUE))
+                                  
+              colnames(summaryById)[1:2] <- c("grid-points", paste(object@positionVar,"range", sep = "-"))
             } else {
               summaryById <- unitData
             }
-            
-            idLevels <- levels(id)
-            if(length(idLevels) > 4)
-              idLevels <- c(idLevels[1:3], "...", idLevels[length(idLevels)])
-            if(length(idLevels) > 1) {
-              structure <- paste(length(levels(id)), " units.\n   ", object@idVar,": ", paste(idLevels, collapse = " "), "\n\n", sep="")
-            } else {
-              structure = ""
-            }
-                                             
-            return(list(summary = summaryById, structure = structure))
+                                                    
+            return(summaryById)
           }
           )
+
+setMethod("simpleSummary", "ContinuousProcess",
+          function(object, ...) {
+            idLevels <- levels(getId(object))
+            if(length(idLevels) > 10)
+              idLevels <- c(idLevels[1:9], "...", idLevels[length(idLevels)])
+            if(length(idLevels) > 1) {
+              structure <- paste(length(idLevels), " units.\n   ",
+                                 object@idVar,": ", paste(idLevels, collapse = " "),
+                                 "\n\n", sep = "")
+            } else {
+              structure <- ""
+            }
+            colnames <- colNames(object)
+            if(length(colnames) > 10)
+              colnames <- c(colnames[1:9], "...", idLevels[length(colnames)])
+
+            if(length(colnames) == 1) {
+              variables <- "variable"
+            } else {
+              variables <- "variables"
+            }
+             
+            structure <- paste(structure,
+                               length(colNames(object)), " ", variables, ".\n   ", paste(colnames, collapse = " "), "\n\n", sep = "")
+            return(structure)
+          }
+          )
+        
 
 setMethod("show", "ContinuousProcess",
           function(object) {
@@ -484,39 +784,41 @@ setMethod("show", "ContinuousProcess",
             op <- options()
             options(list(quote = FALSE, digits = 3))
             cat(paste("Class:", class(object), "\n"))
-            cat(paste("Dimensions:", d[1], "x", d[2], "\n\n"))
-            cat(showData(object)$structure)
-            print(showData(object)$summary)
+            cat(paste("Dimensions:", d[1], "x", d[2], "\n"))
+            cat(paste("Index variable:", object@positionVar, "\n\n"))
+            cat(simpleSummary(object))
             options(op)
             return(invisible(object))
           }
           )
 
-## TODO: Improve the summary function. Report ranges. 
-
 setMethod("summary", "ContinuousProcess",
            function(object) {
-             list("Summary of variables" =
-                  summary(getUnitData(object)),
-                  "Summary of values" =
-                  apply(getValue(object), 2, summary))
+             print(object)
+             print(summarizeData(object))
+             return(invisible(NULL))
            }
            )
 
-setMethod("updateProcessObject", "ContinuousProcess",
-          function(object, ...) {
-
-            continuousProcess <- new("ContinuousProcess",
-                                     unitData = object@unitData,
-                                     metaData = object@metaData,
-                                     iSubset = object@iSubset,
-                                     jSubset = object@jSubset,
-                                     idVar = object@idVar,
-                                     colNames = object@colNames,
-                                     positionVar = object@positionVar,
-                                     valueEnv = object@valueEnv,
-                                     factors = numeric())
-            validObject(continuousProcess)
-            return(continuousProcess)
-            }
+setMethod("unsubset", "ContinuousProcess",
+          function(x, ...) {
+            as(x, "ProcessData") <- callGeneric(as(x, "ProcessData"))
+            x@iSubset <- -1L
+            x@jSubset <- -1L
+            return(x)
+          }
           )
+
+## setMethod("updateProcessObject", "ContinuousProcess",
+##           function(object, ...) {
+
+##             continuousProcess <- continuousProcess(object@valueEnv$value,
+##                                                    unitData = object@unitData,
+##                                                    metaData = object@metaData,
+##                                                    idVar = object@idVar,
+##                                                    positionVar = object@positionVar
+##                                                    )
+##             validObject(continuousProcess)
+##             return(continuousProcess)
+##           }
+##           )

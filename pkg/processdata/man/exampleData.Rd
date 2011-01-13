@@ -1,13 +1,14 @@
 \name{ExampleData}
 \alias{example}
 \alias{contExam}
+\alias{factExam}
 \alias{pointExam}
 \alias{jumpExam}
 
 
 \docType{data}
 \title{
-Three small example data sets.
+Four small example data sets.
 }
 \description{
 
@@ -18,8 +19,9 @@ Three small example data sets.
 }
 \usage{example}
 
-\format{ The three data sets \code{contExam}, \code{pointExam},
-  \code{jumpExam} in \code{example} are of class \code{\linkS4class{ContinuousProcess}},
+\format{ The four data sets \code{contExam}, \code{factExam} \code{pointExam},
+  \code{jumpExam} in \code{example} are of class
+  \code{\linkS4class{ContinuousProcess}}, \code{\linkS4class{ContinuousProcess}},
   \code{\linkS4class{MarkedPointProcess}} and
   \code{\linkS4class{JumpProcess}}, respectively. 
  

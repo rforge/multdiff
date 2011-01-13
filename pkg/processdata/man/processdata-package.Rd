@@ -5,7 +5,7 @@
 \title{Process Data}
 \description{
 
-  This package implements data structures for stochastic processes.
+  This package implements data structures for stochastic process data.
   The data can be in the form of either discretely observed continuous
   time processes, marked point processes, jump processes or a combination.
 
@@ -14,8 +14,8 @@
 \tabular{ll}{
 Package: \tab processdata\cr
 Type: \tab Package\cr
-Version: \tab 0.7.3 \cr
-Date: \tab 2010-11-19 \cr
+Version: \tab 0.7.5 \cr
+Date: \tab 2011-01-13 \cr
 License: \tab GPL version 2 or newer \cr
 LazyLoad: \tab yes\cr
 }
@@ -29,7 +29,16 @@ extension is the class \code{\linkS4class{JumpProcess}}, which uses the
 combination of marked points and continuous process observations to
 represent data from jump processes.
 
+The classes are, in particular, designed as a convenient data format for
+storing date from multiple units or individuals where we have
+multivariate or even high-dimensional observations of processes, and
+where the processes can be a combination of discretely observed
+continuous processes as well as discrete events. The classes manage the
+relations between the different types of data and provide a simple
+interface but avoids memory expensive redundancies in the
+representation.
 
+For an introduction to the usage of the package, see the vignette overview.
 
 }
 \author{
@@ -50,11 +59,11 @@ CPframe <- data.frame(time = seq(0,1,0.01),
 
 CP <- continuousProcess(CPframe)
 
-\dontrun{
-plot(CP)}
+\dontrun{plot(CP)
+
+}
 
 ### Setting up a simple point process with two marks
-
 PPframe <- data.frame(
  time = c(0.1,0.12,0.35,0.5,0.55,0.56,0.7,0.75,0.9,0.91),
  markType = c("A","A","B","B","A","A","B","A","B","A")
@@ -63,15 +72,21 @@ PPframe <- data.frame(
 PP <- markedPointProcess(PPframe, seq(0,1,0.01))
 
 
-\dontrun{
-plot(PP)}
+\dontrun{plot(PP)
+
+}
 
 ### Combining the two data structures in a single object
-
 process <- markedPointProcess(PPframe, CPframe)
 
-\dontrun{
-plot(process)}
+\dontrun{plot(process)
+
+}
+
+## More details in the vignette.
+\dontrun{vignette("overview")
+
+}
 
 
 }

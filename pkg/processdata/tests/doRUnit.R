@@ -50,7 +50,10 @@ if(require("RUnit", quietly=TRUE)) {
  
   ## Report to HTML file
   printHTMLProtocol(tests, fileName=paste(pathReport, ".html", sep=""))
- 
+  if(exists("track")) {
+    printHTML.trackInfo(track$getTrackInfo(), path)
+  }
+
   ## Return stop() to cause R CMD check stop in case of
   ##  - failures i.e. FALSE to unit tests or
   ##  - errors i.e. R errors

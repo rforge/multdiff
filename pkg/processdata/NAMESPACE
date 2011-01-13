@@ -1,4 +1,5 @@
 importFrom("graphics", "plot")
+importFrom("utils", "object.size", "str")
 
 exportClasses("ProcessData",
               "ContinuousProcess",
@@ -6,11 +7,15 @@ exportClasses("ProcessData",
               "JumpProcess")
 
 exportMethods("continuousProcess",
+              "colNames",
               "dim",
+              "getColumns",
               "getId",
+              "getFactors",
               "getPointId",
               "getMarkType",
               "getMarkValue",
+              "getNumerics",
               "getPlotData",
               "getPointTime",
               "getPointPosition",
@@ -22,10 +27,12 @@ exportMethods("continuousProcess",
               "integrator",
               "jumpProcess",
               "markedPointProcess",
-              "colNames",
-              "colNames<-",
+              "object.size",
               "plot",
+              "process",
+              "str",
               "subset",
-              "updateProcessObject",
+              "summary",
+              "unsubset",
               "[")
               

@@ -28,7 +28,7 @@
     argument. The default value is \code{1}, meaning a constant
     integrand. }
 
-  \item{jumpVar}{ a \code{character}. If not equal to one of the row
+  \item{jumpVar}{ a \code{character}. If not equal to one of the column
     names of \code{getMarkValue(object)} the counting process for
     \code{mark} is computed. The default value is \code{''}}
   
@@ -62,11 +62,11 @@
 }
 
 \author{
-  Niels Richard Hansen, \email{Niels.R.Hansen@math.ku.dk}
+  Niels Richard Hansen, \email{Niels.R.Hansen@math.ku.dk}.
   }
 
 \seealso{
-\code{\link{jumpProcess}}, \code{\linkS4class{MarkedPointProcess}}, \code{\linkS4class{JumpProcess}}, \code{subset}.  
+\code{\link{jumpProcess}}, \code{\linkS4class{MarkedPointProcess}}, \code{\linkS4class{JumpProcess}}, \code{\link{subset}}.  
 
 }
 \examples{
@@ -76,13 +76,13 @@ MP <- data.frame(time = seq(5, 95, 10),
                  jump = rnorm(10))
 
 ## The counting process only
-integrator(markedPointProcess(MP, 1:100))
+plot(integrator(markedPointProcess(MP, 1:100)))
 
 ## The integrated pure jump process.
-integrator(markedPointProcess(MP, 1:100), jumpVar = 'jump')
+plot(integrator(markedPointProcess(MP, 1:100), jumpVar = 'jump'))
 
 ## With an integrand
-integrator(markedPointProcess(MP, 1:100), f = cos)
+plot(integrator(markedPointProcess(MP, 1:100), f = cos))
 
 }
 \keyword{manip}

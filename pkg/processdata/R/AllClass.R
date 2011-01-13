@@ -1,14 +1,28 @@
 setClass("ProcessData",
          representation(
                         ## metaData is a list, in general unrestricted.
-                        ## The intention is that metaData contains information
+                        ## The slot can contain information
                         ## on the experiment or procedure by which the
                         ## data is obtained.
                         metaData = "list",
+
+                        ## Column names.
+                        unitColNames = "character",
+
+
+                        ## The valueEnv is assumed to have a data
+                        ## frame, unitData, that holds general
+                        ## information for each unit for which we have
+                        ## observations and a factor 'id'. 
+                        valueEnv = "environment",
+
+                        ## Name of the id variable.
+                        idVar = "character",
                         
-                        ## unitData holds general information for each unit
-                        ## for which we have observations.
-                        unitData = "data.frame"
+                        ## Two vectors indexing a subset of the full data set
+                        ## in the valueEnv environment.
+                        iUnitSubset = "integer",
+                        jUnitSubset = "integer"
                         ),
          validity = function(object) {
            
@@ -26,29 +40,24 @@ setClass("ProcessData",
 
 setClass("ContinuousProcess",
          representation(
+                        equiDistance = "numeric",
+
+                        ## Column names.
+                        factorColNames = "character",
+                        numericColNames = "character",
+
                         ## Two vectors indexing a subset of the full data set
                         ## in the valueEnv environment.
                         iSubset = "integer",
                         jSubset = "integer",
                         
-                        ## Names of the id variable and position variable.
-                        idVar = "character",
-                        positionVar = "character",
-                        
-                        ## Column names.
-                        colNames = "character",
+                        ## Name of the position variable.
+                        positionVar = "character"
 
-                        ## The 'valueEnv' contains the following three
+                        ## The 'valueEnv' will also contain the following 
                         ## components of the data:
-                        ## id = "factor",
                         ## position = "numeric",
-                        ## value = "Matrix",
-                        ## i = "numeric",
-                        ## j = "numeric"
-                        valueEnv = "environment",
-
-                        ## Which columns in the value matrix are factors.
-                        factors = "numeric"
+                        ## and any number of numeric and non-numeric vectors
                         ),
          contains = "ProcessData",
          validity = function(object){
@@ -57,21 +66,27 @@ setClass("ContinuousProcess",
              stop(paste("No", object@idVar, "or", object@idVar, "is not a factor."))
            if(!is.numeric(object@valueEnv$position))
              stop(paste("No", object@positionVar, "or", object@positionVar, "is not a numeric."))
-           if(!is(object@valueEnv$value, "Matrix"))
-             stop("No 'value' or 'value' is not a Matrix.")
+           ## if(!is(object@valueEnv$value, "matrix"))
+           ##   stop("No 'value' or 'value' is not a matrix.")
 
            ## Checks that assumed orderings are correct.
-           if(any(levels(getId(object)) != rownames(getUnitData(object))) || length(levels(getId(object))) != dim(getUnitData(object))[1]){
-             stop(paste("The levels of", object@idVar, "and the row names of unitData are either not of equal length or in the same order."))
-           }
-           if(any(unlist(tapply(getPosition(object), getId(object), is.unsorted))))
-             stop(paste(object@positionVar,"not sorted within", object@idVar))
-            
+           
+           ## if(any(levels(getId(object)) != rownames(getUnitData(object))) || length(levels(getId(object))) != dim(getUnitData(object))[1]){
+           ##   stop(paste("The levels of", object@idVar, "and the row names of unitData are either not of equal length or in the same order."))
+           ## }
+           id <- getId(object)
+           position <- getPosition(object)
+           idLevels <- split(seq_along(id), id)
+           if(is.unsorted(id) || any(sapply(length(idLevels),
+                                            function(i) is.unsorted(position[idLevels[[i]]]))))
+             stop(paste(object@positionVar ,"not sorted within", object@idVar))
+           
            ## Checks that the components in the environment have the correct
            ## format. 
-           len <- length(object@valueEnv$id)
-           if((len != length(object@valueEnv$position)) || (len != dim(object@valueEnv$value)[1]))
+           if((length(object@valueEnv$id) != length(object@valueEnv$position)))
              stop("Mismatch in the size of slots for 'ContinuousProcess'.")
+
+           ## TODO: Check length of all other vectors.
           
            return(TRUE)
          }
@@ -80,28 +95,31 @@ setClass("ContinuousProcess",
 
 setClass("MarkedPointProcess",
          representation(
+                        ## Column names.
+                        markColNames = "character",
+                        markValueColNames = "character",
+                        
                         iPointSubset = "integer",
                         jPointSubset = "integer",
-                        markVar = "character",
+
+                        ## The pointer for subsetted objects to the
+                        ## point positions.
                         pointPointer = "integer",
                         
                         ## The 'pointProcessEnv' environment contains
                         ## the following four components:
                         ## id = "factor",
-                        ## position = "numeric",
                         ## markType = "factor",
+                        ## pointPointer = "integer",
                         ## markValue = "data.frame"
                         pointProcessEnv = "environment"
                         ),
          contains = "ContinuousProcess",
          validity = function(object) {
            len <- length(object@pointProcessEnv$id)
-           if(len != length(object@pointProcessEnv$position))
-             stop("Sizes of the slots 'id' and 'position' do not match.")
            if(len != length(object@pointProcessEnv$markType))
              stop("Sizes of the slots 'id' and 'markType' do not match.")
-           if(dim(object@pointProcessEnv$markValue)[1] > 0 & dim(object@pointProcessEnv$markValue)[1] != len)
-             stop("Size of the slot 'id' and the dimension of 'markValue' do not match.")
+          
            if(any(levels(getPointId(object)) != rownames(getUnitData(object)))) 
              stop(paste("The point process levels of", object@idVar, "and the row names of unitData are not of equel length or in the same order."))
            if(any(unlist(tapply(getPointPosition(object), getPointId(object), is.unsorted))))

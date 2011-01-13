@@ -4,8 +4,8 @@
 \alias{dim,MarkedPointProcess-method}
 \alias{colNames}
 \alias{colNames<-}
-\alias{colNames,MarkedPointProcess-method}
-\alias{colNames<-,MarkedPointProcess,character-method}
+\alias{colNames,MarkedPointProcess,missing-method}
+\alias{colNames,MarkedPointProcess,character-method}
 \alias{getPointId,MarkedPointProcess-method}
 \alias{getPointId}
 \alias{getMarkType,MarkedPointProcess-method}
@@ -43,12 +43,14 @@ The class extends \code{ContinuousProcess} and is extended by the class
 }
 \section{Slots}{
   \describe{
+
+    \item{\code{markColNames}:}{a \code{character}.}
+
+    \item{\code{markValueColNames}:}{a \code{character}.}
     
     \item{\code{iPointSubset}}{ an \code{integer} vector.}
 
     \item{\code{jPointSubset}}{ an \code{integer} vector.}
-
-    \item{\code{markVar}}{ a \code{character}.}
 
     \item{\code{pointPointer}}{ an \code{integer} vector.}
 
@@ -59,11 +61,12 @@ The class extends \code{ContinuousProcess} and is extended by the class
 \section{Methods}{
   \describe{
 
-    \item{colNames}{\code{signature(object = "MarkedPointProcess")}: Returns
-       the column names.}
-     
-     \item{colNames<-}{\code{signature(object = "MarkedPointProcess",
-	 value = "character")}: Sets the column names.}
+    \item{colNames}{\code{signature(object = "MarkedPointProcess", type
+       = "character")}: Returns the column names if \code{type} is
+       missing. If \code{type} is not missing, it must be either
+       \code{'unit'}, \code{'factor'}, \code{'numeric'}, \code{'mark'}
+       or \code{'markValue'} resulting in the column names for the
+       specific column type only.}
    
      \item{dim}{\code{signature(x = "MarkedPointProcess")}: Returns the
        dimensions.}

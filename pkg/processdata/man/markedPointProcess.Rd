@@ -7,21 +7,28 @@
 \alias{markedPointProcess,data.frame,ANY-method}
 \alias{markedPointProcess,vector,ANY-method}
 \alias{markedPointProcess,data.frame-method}
+\alias{markedPointProcess,MarkedPointProcess-method}
+\alias{markedPointProcess,MarkedPointProcess,missing-method}
+
 \title{Marked Point Process}
 \description{
   Creates a \code{MarkedPointProcess} object from 
   data frame(s).
 }
 \usage{
-\S4method{markedPointProcess}{data.frame,ContinuousProcess}(pointData, continuousData, markVar = 'markType', ...)
+\S4method{markedPointProcess}{data.frame,ContinuousProcess}(pointData,
+continuousData, markVar = 'markType', coarsen = NULL, ...)
 
-\S4method{markedPointProcess}{data.frame,data.frame}(pointData, continuousData, markVar = 'markType', ...)
+\S4method{markedPointProcess}{data.frame,data.frame}(pointData,
+continuousData, ..., markVar = 'markType', coarsen = NULL)
 
 \S4method{markedPointProcess}{data.frame,vector}(pointData, continuousData, positionVar = 'time',
- idVar = 'id', markVar = 'markType', ...)
+ idVar = 'id', markVar = 'markType',  ...)
 
 \S4method{markedPointProcess}{data.frame}(pointData, positionVar = 'time', idVar = 'id',
  markVar = 'markType', ...)
+
+\S4method{markedPointProcess}{MarkedPointProcess}(pointData, ...)
 }
 \arguments{
 
@@ -44,6 +51,10 @@
 
   \item{markVar}{ a \code{character} specifying the name of the
     mark variable. Default value \code{'markType'}.}
+
+  \item{coarsen}{ a \code{character} or \code{NULL}. Either
+  \code{'left'} or \code{'right'} for coarsing the event points to the
+  observation grid, or \code{NULL} (the default) for no coarsing. }
   
   \item{...}{ further arguments passed to \code{continuousProcess}.} 
 }
@@ -56,6 +67,11 @@
   or \code{idVar} columns they are automatically generated. If
   \code{markVar} is missing it is assumed that there is only one type of marks. If
   \code{idVar} is missing it is assumed that there is only one unit.
+
+  If \code{coarsen} is not \code{NULL} the event points are coarsed to
+  the observation grid of the continuous process. Otherwise the
+  observation grid will be enlarged to include the event points and
+  continuous process data will be interpolated. 
 
   The constructor with signature ("data.frame", "data.frame") is a wrapper for
   

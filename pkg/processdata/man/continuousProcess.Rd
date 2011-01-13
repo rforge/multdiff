@@ -1,14 +1,29 @@
 \name{continuousProcess}
 \alias{continuousProcess}
+\alias{continuousProcess,list-method}
 \alias{continuousProcess,data.frame-method}
+\alias{continuousProcess,numeric-method}
+\alias{continuousProcess,matrix-method}
+\alias{continuousProcess,ContinuousProcess-method}
 \title{Continuous Process}
 \description{
   Creates a \code{ContinuousProcess} object from 
   data frame(s).
 }
 \usage{
+\S4method{continuousProcess}{list}(continuousData, unitData = data.frame(),
+  metaData = list(), positionVar = 'time', idVar = 'id', ...)
+
 \S4method{continuousProcess}{data.frame}(continuousData, unitData = data.frame(),
   metaData = list(), positionVar = 'time', idVar = 'id', ...)
+
+\S4method{continuousProcess}{numeric}(continuousData, unitData = data.frame(),
+  metaData = list(), positionVar = 'time', idVar = 'id', ...)
+
+\S4method{continuousProcess}{matrix}(continuousData, unitData = data.frame(),
+  metaData = list(), positionVar = 'time', idVar = 'id', ...)
+
+\S4method{continuousProcess}{ContinuousProcess}(continuousData, ...)
 }
 \arguments{
   
