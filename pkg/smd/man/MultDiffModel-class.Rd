@@ -16,7 +16,7 @@
   multivariate diffusion model.
   
 }
-\section{Objects from the Class}{A virtual Class: No objects may be created from it.}
+\section{Objects from the class}{A virtual class: No objects may be created from it.}
 \section{Slots}{
   \describe{
     \item{\code{data}:}{Object of class \code{"ContinuousProcess"}}

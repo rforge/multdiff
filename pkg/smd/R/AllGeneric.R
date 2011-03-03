@@ -1,7 +1,6 @@
 ### Generic functions
 
 setGeneric("condMeanVar", function(object,...){standardGeneric("condMeanVar")})
-#setGeneric("fitMultDiffModel", function(object,...){standardGeneric("fitMultDiffModel")})
 setGeneric("getData", function(object,...){standardGeneric("getData")})
 setGeneric("getParameters", function(object,...){standardGeneric("getParameters")})
 setGeneric("gradient",function(object,...){standardGeneric("gradient")})

@@ -14,13 +14,14 @@
 \tabular{ll}{
 Package: \tab smd\cr
 Type: \tab Package\cr
-Version: \tab 0.1\cr
-Date: \tab 2010-08-04\cr
+Version: \tab 0.2\cr
+Date: \tab 2011-03-01\cr
 License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
 }
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
+
+What does this package contain?
+
 }
 \author{
   Nina Munkholt

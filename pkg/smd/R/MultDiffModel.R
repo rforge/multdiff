@@ -1,5 +1,5 @@
-
-### Begin: MultDiffModel
+# (Virtual) class: MultDiffModel
+# Represents a multivariate diffusion model
 
 setClass(
          Class = "MultDiffModel",
@@ -10,6 +10,8 @@ setClass(
            )
          )
 
+# Method: getData
+# Retrieves data from an object inheriting from class MultDiffModel
 
 setMethod(
           "getData",
@@ -18,6 +20,9 @@ setMethod(
             return(object@data)
           }
           )
+
+# Method: getParameters
+# Retrieves parameters from an object inheriting from class MultDiffModel
 
 
 setMethod(
@@ -29,81 +34,42 @@ setMethod(
           )
 
 
-### End: MultDiffModel-class
-
-### Begin: Loss function
+# Method: loss
+# Calculates the value of the type 1 and 2 loss functions
 
 setMethod(
           "loss",
           "MultDiffModel",
-          function(object, parameters, lossType){
+          function(object, parameters, equitmp, lossType){
             data <- as.matrix(getValue(object@data))
             if (length(data)==0)
               stop("'object' must contain 'data'")
+            n <- dim(data)[1]
             if (missing(parameters))
               {parameters <- object@parameters}
-            #validateParameters(object, parameters)
-            pos <- getPosition(object@data)
-            n <- length(pos)
             p <- dim(parameters$A)[1]
-            delta <- pos[2:n]-pos[1:(n-1)]
+            if (p != dim(data)[2])
+              stop("Mismatch in dimensions of object data and 'parameters'")
             if (lossType == 1)
               {
-                tmpMean <- do.call(rbind, condMeanVar(object, parameters, x=data[1:(n-1),], t=delta)$condMean)
-                return(sum((data[2:n,]-tmpMean)^2)/2)
+                tmpMean <- condMeanVar(object, parameters, equitmp=equitmp)
+                return(sum((t(data[2:n,])-tmpMean)^2)/2)
               }
             if (lossType == 2)
               {
-                tmpMeanVar <- condMeanVar(object, parameters, x=data[1:(n-1),], t=delta,var=TRUE)
-                tmpMean <- do.call(rbind, tmpMeanVar$condMean)
-                tmpVar <- t(sapply(tmpMeanVar$condVar, function(y){return(y)})) ##??
-                centeredObs <- data[2:n,] - tmpMean
-                wCenteredObs <- t(apply(cbind(tmpVar,centeredObs), 1, function(y){
-                  solve(matrix(y[1:(p*p)],nrow=p,ncol=p),matrix(y[(p*p+1):(p*(p+1))]))
+                tmpMeanVar <- condMeanVar(object, parameters, equitmp=equitmp, var=TRUE)
+                tmpMean <- tmpMeanVar$condMean
+                tmpVar <- tmpMeanVar$condVar
+                centeredObs <- t(data[2:n,]) - tmpMean
+                tmp1 <- rep(NA,n-1)
+                tmp2 <- rep(NA,n-1)
+                for (i in 1:(n-1)){
+                  tmp1[i] <- t(centeredObs[,i])%*%solve(tmpVar[,,i],centeredObs[,i])
+                  tmp2[i] <- log(det(tmpVar[,,i]))
                 }
-                                        )
-                                  )
-                firstSum <- sum(
-                                apply(cbind(centeredObs,wCenteredObs),1,function(y){
-                                  matrix(y[1:p],nrow=1)%*%matrix(y[(p+1):(2*p)])
-                                }
-                                      )
-                                )
-                secondSum <- sum(apply(tmpVar,1,function(y){
-                  log(det(matrix(y,nrow=p,ncol=p)))
-                }
-                                       )
-                                 )
-                return((firstSum + secondSum)/2)
+                return(sum(tmp1+tmp2)/2)
               }
           }
           )
-            
-            
 
 
-### end: Loss function
-
-
-#setMethod("fitMultDiffModel",
-#          "ContinuousProcess",
-#          function(object,modelClass,lossType){
-#            if(modelClass == "OUModel" && lossType == 1){
-#              model <- new("OUModel", data=object)
-#              p <- dim(getValue(object))[2]
-#              
-#              
-#              l <- function(x){
-#                loss(model,parToList(model,c(x,as.numeric(diag(1,p)))),lossType)+lambda*sum(abs(x))
-#              }
-#
-#              L <- function(y){
-#                loss(model,parToList(model,c(x,as.numeric(diag
-#
-#              optim(0,
-#                optim(rep(1,p+p*p),fn=l)
-#              
-#                
-#              }}}
-#          )
-              
