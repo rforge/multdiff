@@ -11,6 +11,99 @@
 ##       }
 ##       )
 
+## A factor.frame is an informal S3 class extending a data.frame.  A
+## factor.frame is supposed to have three or four columns. The
+## 'variable' column and 'value' column are factors specifying which
+## variables takes which values at the positions given by the
+## 'position' column. An 'id' column is optional. All variables need
+## to have the same factor levels.
+
+range2factor.frame <- function(rangeData, id = 'id', start = 'start',
+                               end = 'end', variable = 'variable',
+                               delta = 1, frameData = NULL, ...) {
+  ## rangeData is assumed to have four columns.
+
+  rangeData[ , id] <- as.factor(rangeData[ , id])
+  rangeData[ , end] <- rangeData[ , end] + delta
+  
+  if(is.null(frameData)) {
+    ip <- split(seq_len(dim(rangeData)[1]), rangeData$id)
+    idStarts <- sapply(seq_along(ip), function(i) min(rangeData[ip[[i]], start] - delta))
+    idEnds <- sapply(seq_along(ip), function(i) max(rangeData[ip[[i]], end] + delta))
+    frameData <- data.frame(levels(rangeData[ , id]), idStarts, idEnds)
+    names(frameData) <- c(id, start, end)
+  }
+  factorFrame <- melt(rangeData, measure.vars = c(start, end), variable_name = ".value")
+  names(factorFrame)[match(c(".value", "value"), names(factorFrame))] <- c("value", "position")
+  factorFrame$value <- factor(factorFrame$value, levels = c(end, start), labels = c(0, 1))
+  factorFrame$variable <- as.factor(factorFrame$variable)
+  
+  ii <- rep(seq_along(levels(factorFrame[ , id])),
+            each = length(levels(factorFrame[ , variable])))
+
+  startFrame <- cbind(frameData[ii, id, drop = FALSE],
+                      levels(factorFrame[ , variable]),
+                      factor(0, levels = c(0, 1)),
+                      frameData[ii, start, drop = FALSE])
+
+  endFrame <- cbind(frameData[ii, id, drop = FALSE],
+                    levels(factorFrame[ , variable]),
+                    factor(0, levels = c(0, 1)),
+                    frameData[ii, end, drop = FALSE])
+                      
+  names(startFrame) <- names(endFrame) <- names(factorFrame)
+  factorFrame <- rbind(factorFrame, startFrame, endFrame)
+  ## ip <- split(seq_len(dim(factorFrame)), factorFrame[ , id])
+  ## ip <- sapply(names(ip),
+  ##               function(i) ip[[i]][order(factorFrame[ip[[i]], "position"])]
+  ##               )
+  ## ip <- ip[order(names(ip))]
+  
+  factorFrame <- factorFrame[order(factorFrame[ , id], factorFrame$position, factorFrame$value), ]
+  
+  class(factorFrame) <- c("factor.frame", "data.frame")
+  return(factorFrame)
+}
+
+
+setMethod("continuousProcess", "factor.frame",
+          function(continuousData, positionVar = 'time', idVar = 'id',
+                   valueVar = "value",  variableVar = "variable", ...) {
+
+            ip <- split(seq_len(dim(continuousData)), continuousData[ , idVar])
+            positions <- sapply(names(ip),
+                                function(i) continuousData[ip[[i]], positionVar])
+            variables <- sapply(names(ip),
+                                function(i) continuousData[ip[[i]], variableVar])
+            varLevels <- levels(continuousData[ , variableVar])
+            value <- continuousData[ , valueVar]
+
+            dup <- which(unlist(lapply(positions, duplicated)))
+            if(length(dup) > 0)
+              continuousData <- continuousData[-dup, ]
+            
+            continuousData <- continuousProcess(as.list(continuousData[ , c(idVar, positionVar)]),
+                                                              positionVar = positionVar,
+                                                              idVar = idVar)
+            cpositions <- split(getPosition(continuousData),
+                                getId(continuousData))
+
+            for(v in varLevels) {
+              iv <- unlist(lapply(names(ip),
+                                  function(i) {
+                                    j <- which(variables[[i]] == v)
+                                    c(1, ip[[i]][j] + 1)[findInterval(cpositions[[i]],
+                                                                      positions[[i]][j]) + 1]
+                                  }), use.names = FALSE)
+              assign(paste("var", "_", v, sep = ""),
+                     factor(c(1, value)[iv], labels = levels(value)),
+                     envir = continuousData@valueEnv)
+            }
+            continuousData@factorColNames <- varLevels
+            return(continuousData)            
+          }
+          )
+
 setAs("ContinuousProcess", "list",
       def = function(from) {        
         to <- c(list(getId(from),
@@ -529,7 +622,7 @@ setMethod("getPlotData", "ContinuousProcess",
             ## The computation of the data needed for producing a plot
             ## is split into two parts. First all 'factor' variables
             ## are extracted, and a data frame is computed with the
-            ## information of shifts in the factor values. The result
+            ## information of changes in the factor values. The result
             ## is a type of 'run length encoding' useful for plotting
             ## horizontal lines, or bars, at the different levels of
             ## the factor in a non-anticipating "limits from the left,
@@ -755,7 +848,7 @@ setMethod("simpleSummary", "ContinuousProcess",
             if(length(idLevels) > 10)
               idLevels <- c(idLevels[1:9], "...", idLevels[length(idLevels)])
             if(length(idLevels) > 1) {
-              structure <- paste(length(idLevels), " units.\n   ",
+              structure <- paste(length(levels(getId(object))), " units.\n   ",
                                  object@idVar,": ", paste(idLevels, collapse = " "),
                                  "\n\n", sep = "")
             } else {
@@ -763,7 +856,7 @@ setMethod("simpleSummary", "ContinuousProcess",
             }
             colnames <- colNames(object)
             if(length(colnames) > 10)
-              colnames <- c(colnames[1:9], "...", idLevels[length(colnames)])
+              colnames <- c(colnames[1:9], "...", colnames[length(colnames)])
 
             if(length(colnames) == 1) {
               variables <- "variable"
