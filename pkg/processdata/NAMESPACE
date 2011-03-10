@@ -1,5 +1,5 @@
-importFrom("graphics", "plot")
-importFrom("utils", "object.size", "str")
+importFrom("graphics", plot)
+importFrom("utils", object.size, str)
 
 exportClasses("ProcessData",
               "ContinuousProcess",
@@ -10,6 +10,7 @@ exportMethods("continuousProcess",
               "colNames",
               "dim",
               "getColumns",
+              "getEquiDistance",
               "getId",
               "getFactors",
               "getPointId",

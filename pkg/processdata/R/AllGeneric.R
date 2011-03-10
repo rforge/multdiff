@@ -3,6 +3,7 @@ setGeneric("continuousProcess", function(continuousData, ...) standardGeneric("c
 setGeneric("colNames", function(object, type, ...) standardGeneric("colNames"))
 setGeneric("colNames<-", function(object, value) standardGeneric("colNames<-"))
 setGeneric("getColumns", function(object, j, ...) standardGeneric("getColumns"))
+setGeneric("getEquiDistance", function(object, ...) standardGeneric("getEquiDistance"))
 setGeneric("getId", function(object, ...) standardGeneric("getId"))
 setGeneric("getNumerics", function(object, ...) standardGeneric("getNumerics"))
 setGeneric("getFactors", function(object, ...) standardGeneric("getFactors"))

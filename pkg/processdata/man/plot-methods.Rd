@@ -31,10 +31,11 @@
 
 \S4method{plot}{ProcessPlotData}(x, ...)
 
-\S4method{getPlotData}{ContinuousProcess}(object, y = '@bottom', nPoints = 200, allUnitData = FALSE,
-selectPoints = NULL, dropLevels = 1, ...)
+\S4method{getPlotData}{ContinuousProcess}(object, y = '@bottom', nPoints = 200, allUnitData = FALSE, selectPoints = NULL, dropLevels = 1, ...)
 
-\S4method{getPlotData}{MarkedPointProcess,character}(object, y = '@mark', nPoints = 200, allUnitData = FALSE, ...)
+\S4method{getPlotData}{MarkedPointProcess,character}(object, y =
+'@mark', nPoints = 200, allUnitData = FALSE, allMarkValueData = isTRUE(y
+\%in\% names(getMarkValue(object))), ...)
 
 \S4method{getPlotData}{JumpProcess}(object, nPoints = 200, ...)
 }
@@ -56,9 +57,13 @@ selectPoints = NULL, dropLevels = 1, ...)
     plotted. Default value is 200.  }
   
   \item{allUnitData}{ a \code{logical}. Specifies if non-process data
-    should be included in the data set for plotting. Default value is
-    \code{FALSE}.  }
+    should be included in the data set for plotting. Default value
+    depends upon whether \code{y} is a mark value or not. }
 
+  \item{allMarkValueData}{ a \code{logical}. Specifies if mark value data
+    should be included in the data set for plotting. Default value is
+    \code{FALSE}. If }
+  
   \item{selectPoints}{ a \code{numeric} vector or \code{NULL}. Grid
     points to include in the plot in addition to the \code{nPoints}.
   }

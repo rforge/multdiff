@@ -35,6 +35,8 @@ of Copenhagen Universitetsparken 5, 2100 Copenhagen \O, Denmark. \\
 Email address: Niels.R.Hansen@math.ku.dk}, \emph{University of Copenhagen} \\
 \end{center}
 
+\tableofcontents 
+
 <<echo = FALSE>>=
 library(processdata)
 set.seed(123456)
@@ -116,9 +118,9 @@ The constructor makes a number of decisions, since the raw data set in
 \verb+X+ does not contain any information on variable names, time
 points of observations etc. In this case it automatically labels the
 variables \verb+V1+ and \verb+V2+, and assumes that the observations
-are equidistant and observed at time points \verb+1, 2, ..., 2000+. The
+are equidistant and observed at time points \verb+0, 1, ..., 1999+. The
 summary tells us that the data set contains 2000 observations (the
-number of grid points in the observation grid) in the observation window from 1 to 2000. 
+number of grid points in the observation grid) in the observation window from 0 to 1999. 
 
 We can instead provide the information for the constructor. 
 

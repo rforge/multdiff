@@ -3,6 +3,8 @@
 \alias{ProcessData-class}
 \alias{getUnitData,ProcessData-method}
 \alias{setUnitData,ProcessData-method}
+\alias{getEquiDistance}
+\alias{getEquiDistance,ProcessData-method}
 \alias{getId,ProcessData-method}
 \alias{setUnitData}
 \alias{colNames,ProcessData,missing-method}
@@ -37,6 +39,10 @@
 
     \item{\code{idVar}:}{a \code{character}.}
 
+    \item{\code{equiDistance}:}{a \code{numeric}. The interdistance
+      between equidistant sampled observations or 0 indicating
+      non-equidistant observations.}
+
     \item{\code{iUnitSubset}:}{an \code{integer} vector. References for subsetting.}
 
     \item{\code{jUnitSubset}:}{an \code{integer} vector. References for subsetting.}
@@ -52,6 +58,10 @@
      
     \item{dim}{\code{signature(x = "ProcessData")}: Returns the
       dimensions.}
+
+     \item{getEquiDistance}{\code{signature(object = "ProcessData")}: Returns
+      the value of the \code{equiDistance} slot. A value of 0 means that
+      the observations are not equidistant.}
 
     \item{getId}{\code{signature(object = "ProcessData")}: Returns
       the identification variable with name in slot \code{idVar}. }

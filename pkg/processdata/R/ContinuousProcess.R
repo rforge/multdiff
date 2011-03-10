@@ -1,16 +1,3 @@
-## setIs("ContinuousProcess", "list",
-##       coerce = function(from, to) {
-##         to <- c(list(getId(from),
-##                      getPosition(from)),
-##                 getColumns(from, which(getType(from) %in% c("factor", "numeric")), drop = FALSE))
-##         names(to)[1:2] <- c(from@idVar, from@positionVar)
-##         return(to)
-##       },
-##       replace = function(from, value) {
-##         stop("Cannot replace slots and values in an object of class 'ContinuousProcess' from a list")
-##       }
-##       )
-
 ## A factor.frame is an informal S3 class extending a data.frame.  A
 ## factor.frame is supposed to have three or four columns. The
 ## 'variable' column and 'value' column are factors specifying which
@@ -53,12 +40,6 @@ range2factor.frame <- function(rangeData, id = 'id', start = 'start',
                       
   names(startFrame) <- names(endFrame) <- names(factorFrame)
   factorFrame <- rbind(factorFrame, startFrame, endFrame)
-  ## ip <- split(seq_len(dim(factorFrame)), factorFrame[ , id])
-  ## ip <- sapply(names(ip),
-  ##               function(i) ip[[i]][order(factorFrame[ip[[i]], "position"])]
-  ##               )
-  ## ip <- ip[order(names(ip))]
-  
   factorFrame <- factorFrame[order(factorFrame[ , id], factorFrame$position, factorFrame$value), ]
   
   class(factorFrame) <- c("factor.frame", "data.frame")
@@ -67,8 +48,9 @@ range2factor.frame <- function(rangeData, id = 'id', start = 'start',
 
 
 setMethod("continuousProcess", "factor.frame",
-          function(continuousData, positionVar = 'time', idVar = 'id',
-                   valueVar = "value",  variableVar = "variable", ...) {
+          function(continuousData, unitData = data.frame(), metaData = list(),
+                   positionVar = 'time', idVar = 'id',
+                   valueVar = 'value',  variableVar = 'variable', equiDistance = 0, ...) {
 
             ip <- split(seq_len(dim(continuousData)), continuousData[ , idVar])
             positions <- sapply(names(ip),
@@ -83,8 +65,11 @@ setMethod("continuousProcess", "factor.frame",
               continuousData <- continuousData[-dup, ]
             
             continuousData <- continuousProcess(as.list(continuousData[ , c(idVar, positionVar)]),
-                                                              positionVar = positionVar,
-                                                              idVar = idVar)
+                                                unitData = unitData,
+                                                metaData = metaData,
+                                                positionVar = positionVar,
+                                                idVar = idVar,
+                                                equiDistance = equiDistance)
             cpositions <- split(getPosition(continuousData),
                                 getId(continuousData))
 
@@ -115,20 +100,26 @@ setAs("ContinuousProcess", "list",
       )
         
 setMethod("continuousProcess", "data.frame",
-          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...) {
-            callGeneric(as.list(continuousData), unitData = unitData, metaData = metaData, positionVar = positionVar, idVar = idVar, .dont_test_dimensions = TRUE, ...)
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', equiDistance = 0, ...) {
+            callGeneric(as.list(continuousData), unitData = unitData, metaData = metaData,
+                        positionVar = positionVar, idVar = idVar,  equiDistance =  equiDistance,
+                        .dont_test_dimensions = TRUE, ...)
           }
           )
 
 setMethod("continuousProcess", "numeric",
-          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...) {
-            callGeneric(list(V = continuousData), unitData = unitData, metaData = metaData, positionVar = positionVar, idVar = idVar, .dont_test_dimensions = TRUE, ...)
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', equiDistance = 0, ...) {
+            callGeneric(list(V = continuousData), unitData = unitData, metaData = metaData,
+                        positionVar = positionVar, idVar = idVar,  equiDistance =  equiDistance,
+                        .dont_test_dimensions = TRUE, ...)
           }
           )
 
 setMethod("continuousProcess", "matrix",
-          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...) {
-            callGeneric(as.data.frame(continuousData), unitData = unitData, metaData = metaData, positionVar = positionVar, idVar = idVar, .dont_test_dimensions = TRUE, ...)
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id',  equiDistance = 0, ...) {
+            callGeneric(as.data.frame(continuousData), unitData = unitData, metaData = metaData,
+                        positionVar = positionVar, idVar = idVar, equiDistance = equiDistance,
+                        .dont_test_dimensions = TRUE, ...)
           }
           )
 
@@ -146,7 +137,7 @@ setMethod("continuousProcess", "ContinuousProcess",
           )
                    
 setMethod("continuousProcess", "list",
-          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', ...){
+          function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', equiDistance = 0, ...){
 
 
             ## Checking, if required, if the dimensions are correct
@@ -155,30 +146,8 @@ setMethod("continuousProcess", "list",
             args <- list(...)
             if(!(".dont_test_dimensions" %in% names(args) &&
                  args$.dont_test_dimensions)) {
-              ## TODO: What to do with a list containing combinations of vectors and matrices?
-              ## l <- sapply(continuousData, function(x) dim(x)[1], USE.NAMES = FALSE)
-              ## l[sapply(l, is.null)] <- sapply(continuousData[sapply(l, is.null)],
-              ##                                length, USE.NAMES = FALSE)
-              ## numericNames <- list()
-              ##           for(i in which(numerics)) {
-              ##             if(is.null(dim(value[[i]]))) {
-              ##               numericNames[[i]] <- names(value)[i]
-              ##             } else {
-              ##               if(is.null(colnames(value[[i]]))) {
-              ##                 numericNames[[i]] <- paste(names(value)[i], ".",
-              ##                                            seq_len(dim(value[[i]])[2]), sep = "")
-              ##               } else {
-              ##                 numericNames[[i]] <- colnames(value[[i]])
-              ##               }
-              ##               emptyNames <- numericNames[[i]] == ""
-              ##               if(any(emptyNames)) 
-              ##                 numericNames[[i]][emptyNames] <- paste(names(value)[i], ".",
-              ##                                                        seq_len(sum(emptyNames)), sep = "")
-              ##             }
-              ##           }
-              ##           numericNames <- unlist(numericNames)
+              ## TODO: What to do with a list containing combinations of vectors and matrices?           
               l <- sapply(continuousData, length, USE.NAMES = FALSE)
-##              l <- unlist(l)
               if(any(l != l[1]))
                 stop("The list entries in 'continuousData' are not of the same length.")
               if(is.null(names(continuousData))) {
@@ -214,20 +183,31 @@ setMethod("continuousProcess", "list",
               id <- id[ord]
             }
             idLevels <- split(seq_along(id), id)
-##            idLevels <- sapply(levels(id), function(i) which(levels(id)[id] == i),
-##                               simplify = FALSE)
 
             ## Extracting or setting the 'position' variable
             if(!(positionVar %in% colNames)) {
               position <- numeric(length(id))
+              if(is.null(equiDistance)) {
+                equiDistance <- eqd <- 1
+              } else if(equiDistance == 0) {
+                eqd <- 1
+              } else {
+                eqd <- equiDistance
+              }
               for(v in levels(id)) {
-                position[idLevels[[v]]] <- seq_along(idLevels[[v]])
+                position[idLevels[[v]]] <- eqd*seq(0, length(idLevels[[v]])-1)
               }
             } else {
               if(is.null(ord)) {
                 position <- continuousData[[positionVar]]
               } else {
                 position <- continuousData[[positionVar]][ord]
+              }
+              if(is.null(equiDistance)) {
+                uniqueDiff <- unique(sapply(idLevels, function(i) diff(position[i])))
+                if(max(uniqueDiff) - min(uniqueDiff) < .Machine$double.eps ^ 0.5) {
+                  equiDistance <- median(uniqueDiff)
+                }
               }
             }
             
@@ -280,12 +260,10 @@ setMethod("continuousProcess", "list",
                        continuousData[[v]][ord], envir = valueEnv)
               }
             }
-            ## colnames(valueEnv$value) <- numericNames
-            ## valueEnv$unitData <- unitData
                    
             object <- new("ContinuousProcess",
                           metaData = metaData,
-                          equiDistance = 0,
+                          equiDistance = equiDistance,
                           iSubset = -1L,
                           jSubset = -1L,
                           idVar = idVar,
@@ -309,7 +287,6 @@ setMethod("colNames", c("ContinuousProcess", "missing"),
             return(colnames)
           }
           )
-
 
 setMethod("colNames", c("ContinuousProcess", "character"),
           function(object, type, ...) {
@@ -402,15 +379,6 @@ setMethod("[", c(x = "ContinuousProcess", i = "integer", j = "missing"),
           }
           )
 
-
-## setMethod("[", c(x = "ContinuousProcess", i = "numeric", j = "missing"),
-##           function(x, i, j, ... , drop = FALSE) {
-##             i <- as.integer(i)
-##             x <- callGeneric(x, i, , drop = drop)
-##             return(x)
-##           }
-##           )
-
 setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "character"),
          function(x, i, j, ... , drop = FALSE) {
            if(drop && length(j) == 1) {
@@ -423,7 +391,6 @@ setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "character"),
            return(x)
          }
          )
-
 
 setMethod("getColumns", c("ContinuousProcess", "character"),
           function(object, j, drop = TRUE) {
@@ -458,50 +425,6 @@ setMethod("getColumns", c("ContinuousProcess", "character"),
             return(column)
           }
           )
-
-## setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "numeric"),
-##           function(x, i, j, ... , drop = FALSE) {
-##             j <- as.integer(j)
-##             x <- callGeneric(x, , j, drop = drop)
-##             return(x)
-##           }
-##           )
-
-## setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "logical"),
-##           function(x, i, j, ... , drop = FALSE) {
-##             j <- seq_along(colNames(x))[j]
-##             x <- callGeneric(x, , j, drop = drop)
-##             return(x)
-##           }
-##           )
-
-## setMethod("[", c(x = "ContinuousProcess", i = "missing", j = "character"),
-##           function(x, i, j, ... , drop = FALSE) {
-##             j <- colNames(x) %in% j
-##             x <- callGeneric(x, , j, drop = drop)
-##             return(x)
-##           }
-##           )
-
-## setMethod("[", "ContinuousProcess",
-##           function(x, i, j, ... , drop = FALSE) {
-
-##             if(!(class(i) %in% c("logical", "numeric", "integer")))
-##               stop("i must be a 'logical' or a 'numeric' vector.")
-##             if(!(class(j) %in% c("logical", "numeric", "integer", "character")))
-##               stop("j needs to be a 'logical', a 'numeric' or a 'character' vector.")
-            
-##             x <- callGeneric(x, i, , drop = drop)
-##             x <- callGeneric(x, , j, drop = drop)
-##             return(x)
-##           }
-##           )
-
-## setMethod("[", c("ContinuousProcess", "missing", "missing", "missing"),
-##           function(x, i, j, ... , drop) {
-##             return(x)
-##           }
-##           )
 
 setMethod("subset", "ContinuousProcess",
           function(x, subset, select, ...) {
@@ -551,7 +474,7 @@ setMethod("getId", "ContinuousProcess",
             } else {
               value <- object@valueEnv$id[iSubset(object), drop = drop]  ## Default, dropping unused factor levels.
             }
-            
+   
             return(value)
            }
           )
@@ -563,18 +486,6 @@ setMethod("getFactors", "ContinuousProcess",
             return(factors)
            }
           )
-
-## setMethod("getType", "ContinuousProcess",
-##           function(object, ...) {
-##             if(identical(object@jSubset[1], -1L)) {
-##                type <- object@type
-##             } else {
-##               type <- object@type[object@jSubset]
-##             }
-            
-##             return(type)
-##           }
-##           )
           
 setMethod("getNumerics", "ContinuousProcess",
           function(object, ...) {
@@ -593,28 +504,6 @@ setMethod("getValue", "ContinuousProcess",
             getNumerics(object, ...)
           }
           )
-                   
-## setMethod("getValue", "ContinuousProcess",
-##           function(object, ...) {
-##             if(identical(object@iSubset, -1L)) {
-##               if(identical(object@jSubset, -1L)) {
-##                 value <- object@valueEnv$value
-##               } else {
-##                 j <- colnames(object@valueEnv$value) %in% colNames(object) 
-##                 value <- object@valueEnv$value[ , j, drop = FALSE]
-##             }
-##             } else {
-##               if(identical(object@jSubset, -1L)) {
-##                 value <- object@valueEnv$value[object@iSubset, , drop = FALSE]
-##               } else {
-##                 j <- colnames(object@valueEnv$value) %in% colNames(object)
-##                 value <- object@valueEnv$value[object@iSubset, j, drop = FALSE]
-##               }
-##             }
-            
-##             return(value)
-##           }
-##           )
 
 setMethod("getPlotData", "ContinuousProcess",
           function(object, y = '@bottom', nPoints = 200, allUnitData = FALSE, selectPoints = NULL, dropLevels = 1, ...){
@@ -806,7 +695,7 @@ setMethod("summarizeData", "ContinuousProcess",
             id <- getId(object)
             if(length(id) > 0) {
               splitEntries <- split(seq_along(id), id)
-              ranges <- lapply(splitEntries, function(e) signif(range(getPosition(object)[e]), 3))
+              ranges <- lapply(splitEntries, function(e) signif(range(getPosition(object)[e]), 5))
               if(is.list(ranges)) {
                 positionSummary <- as.data.frame(sapply(ranges, function(r) paste("[", r[1],";",r[2],"]", sep="")), stringsAsFactors = FALSE) 
               } else {
@@ -901,17 +790,3 @@ setMethod("unsubset", "ContinuousProcess",
             return(x)
           }
           )
-
-## setMethod("updateProcessObject", "ContinuousProcess",
-##           function(object, ...) {
-
-##             continuousProcess <- continuousProcess(object@valueEnv$value,
-##                                                    unitData = object@unitData,
-##                                                    metaData = object@metaData,
-##                                                    idVar = object@idVar,
-##                                                    positionVar = object@positionVar
-##                                                    )
-##             validObject(continuousProcess)
-##             return(continuousProcess)
-##           }
-##           )

@@ -5,6 +5,7 @@ setClass("ProcessData",
                         ## on the experiment or procedure by which the
                         ## data is obtained.
                         metaData = "list",
+                        equiDistance = "numeric",
 
                         ## Column names.
                         unitColNames = "character",
@@ -40,7 +41,6 @@ setClass("ProcessData",
 
 setClass("ContinuousProcess",
          representation(
-                        equiDistance = "numeric",
 
                         ## Column names.
                         factorColNames = "character",

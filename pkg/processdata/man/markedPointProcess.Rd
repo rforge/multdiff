@@ -2,6 +2,7 @@
 \alias{markedPointProcess}
 \alias{markedPointProcess,data.frame,ContinuousProcess-method}
 \alias{markedPointProcess,data.frame,data.frame-method}
+\alias{markedPointProcess,data.frame,factor.frame-method}
 \alias{markedPointProcess,data.frame,vector-method}
 \alias{markedPointProcess,data.frame,missing-method}
 \alias{markedPointProcess,data.frame,ANY-method}

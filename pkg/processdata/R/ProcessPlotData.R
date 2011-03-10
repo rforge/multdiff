@@ -48,9 +48,6 @@ setMethod("plot", c("ProcessPlotData", "missing"),
             addBreaks <-  offset + factorRange*seq_along(factorLevels)/(length(factorLevels) + 1)
 
             if(length(addBreaks) > 0) {
-       ##       overlappingBreaks <- x@breaks >= (min(addBreaks) - abs(factorRange)/(length(factorLevels) + 1) ) & x@breaks <= (max(addBreaks) + abs(factorRange)/(length(factorLevels) + 1))
-##              x@breaks <- c(x@breaks[!overlappingBreaks], addBreaks) 
-##              x@labels <- c(x@labels[!overlappingBreaks], factorLevels)
               x@breaks <- c(x@breaks, addBreaks) 
               x@labels <- c(x@labels, factorLevels)
             }

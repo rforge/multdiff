@@ -2,9 +2,7 @@ setMethod("process", "data.frame",
           function(unitData, idVar = "id", ...) {
             object <- new("ProcessData")
             setUnitData(object) <- unitData
-#            assign(idVar, row.names(unitData), envir = object@valueEnv)
             object@idVar <- idVar
-#            object@dimensions <- dim(unitData)
             validObject(object)
             return(object)
           }
@@ -46,6 +44,12 @@ setMethod("colNames", c("ProcessData", "character"),
               stop("Argument type", type, "not valid")
             }
             return(colnames)
+          }
+          )
+
+setMethod("getEquiDistance", "ProcessData",
+          function(object, ...) {
+            return(object@equiDistance)
           }
           )
 
@@ -130,19 +134,6 @@ setReplaceMethod("jUnitSubset", c(object = "ProcessData", value = "numeric"),
                  }
                  )
 
-## setReplaceMethod("jSubset", c(object = "ProcessData", value = "numeric"),
-##                  function(object, value) {
-##                    if(length(value) == dim(object@valueEnv$unitData)[2] &&
-##                       identical(value, dim(object@valueEnv$unitData)[2])) {
-##                      object@jSubset <- -1L
-##                    } else {
-##                      object@jSubset <- value
-##                    }
-                   
-##                    return(object)
-##                  }
-##                  )
-
 setMethod("[", c(x = "ProcessData", i = "integer", j = "missing"),
           function(x, i, j, ... , drop = FALSE) {
             iUnitSubset(x) <- iUnitSubset(x)[i]
@@ -188,14 +179,6 @@ setMethod("[", c(x = "ProcessData", i = "missing", j = "numeric"),
             return(x)
           }
           )
-
-## setMethod("[", c(x = "ProcessData", i = "missing", j = "numeric"),
-##           function(x, i, j, ... , drop = FALSE) {
-##             j <- as.integer(j)
-##             x <- callGeneric(x, , j, drop = drop)
-##             return(x)
-##           }
-##           )
 
 setMethod("[", c(x = "ProcessData", i = "missing", j = "logical"),
           function(x, i, j, ... , drop = FALSE) {
@@ -263,11 +246,6 @@ setMethod("getColumns", c("ProcessData", "character"),
               columns <- as.list(getUnitData(object)[ , j, drop = FALSE])
             }
               
-            ## if(identical(object@iUnitSubset[1], -1L)) {
-            ##   column <- object@valueEnv$unitData[ ,j, drop = drop]
-            ## } else {
-            ##   column <- object@valueEnv$unitData[object@iUnitSubset, j, drop = drop]
-            ## }
             return(columns)
           }
           )
@@ -288,31 +266,6 @@ setMethod("object.size", "ProcessData",
           }
           )
 
-## setMethod("[", "ProcessData",
-##           function(x, i, j, ...) {
-##             ## TODO: Implement this more efficiently 
-##             tmp <- getUnitData(x)[i, j, drop = FALSE]   
-##             x@unitData <- x@unitData[i, j, drop = drop]
-##             return(x)
-##           }
-##           )
-
-## setMethod("[", c(x = "ProcessData", i = "ANY", j = "missing"),
-##           function(x, i, j, ..., drop = FALSE) {
-##             j <- TRUE
-##             x <- callGeneric(x, i, j, drop)
-##             return(x)
-##           }
-##           )
-
-## setMethod("[", c(x = "ProcessData", i = "missing", j = "ANY"),
-##           function(x, i, j, ..., drop = FALSE) {
-##             i <- TRUE
-##             x <- callGeneric(x, i, j, drop)
-##             return(x)
-##           }
-##           )
-
 setMethod("subset", "ProcessData",
           function(x, subset, select, ...) {
             if (missing(subset)) 
@@ -320,16 +273,6 @@ setMethod("subset", "ProcessData",
             else {
               e <- substitute(subset)
               variables <- all.vars(e)
-              ## e <- deparse(e)
-              ## for(v in variables) {
-              ##   if(v %in% colNames(x))
-              ##     e <- gsub(v, paste("eval(.", v, ")", sep = ""), e)
-              ## }
-              ## e <- parse(text = e)[[1]]
-              ## r <- eval(e, x@valueEnv, parent.frame())
-
-              ## Environment created for evaluation and populated with
-              ## relevant variables.
               
               tmpEnv <- new.env(parent = .GlobalEnv)
               if(x@idVar %in% variables)
@@ -341,11 +284,6 @@ setMethod("subset", "ProcessData",
               r <- eval(e, tmpEnv, parent.frame())
               if (!is.logical(r)) 
                 stop("'subset' must evaluate to logical")
-              ## if(identical(x@iUnitSubset[1], -1L)) {
-              ##   r <- r & !is.na(r)
-              ## } else {
-              ##   r <- (r & !is.na(r))[iUnitSubset(x)]
-              ## }
                 r <- r & !is.na(r)
             }
             if (missing(select)) 
@@ -355,7 +293,6 @@ setMethod("subset", "ProcessData",
               names(nl) <- colNames(x)
               vars <- eval(substitute(select), nl, parent.frame())
             }
-            
             return(x[r, vars])
           }
           )
@@ -385,7 +322,6 @@ setMethod("str", "ProcessData",
             cat("Formal class", " '", paste(cl, collapse = "', '"), 
                 "' [package \"", attr(cl, "package"), "\"] with ", 
                 length(slotnames), " slots\n", sep = "")            
-            ###utils:::str.default(object, ...)
             envirSlots <- sapply(slotnames, function(name) class(slot(object, name)) == "environment")
 
             niceSlotnames <- format(slotnames,
@@ -419,9 +355,4 @@ setMethod("unsubset", "ProcessData",
             return(x)
           }
           )            
-          
-## setMethod("getType", "ProcessData",
-##           function(object, ...) {
-##             return(rep("unit", dim(object)[2]))
-##           }
-##           )
+    

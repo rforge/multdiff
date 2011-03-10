@@ -46,10 +46,6 @@ time processes.
 \section{Slots}{
   \describe{
 
-    \item{\code{equiDistance}:}{a \code{numeric}. The interdistance
-      between equidistant sampled observations or 0 indicating
-      non-equidistant observations.}
-    
     \item{\code{numericColNames}:}{a \code{character}.}
     
     \item{\code{factorColNames}:}{a \code{character}.}

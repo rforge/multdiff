@@ -1,34 +1,3 @@
-## setAs("MarkedPointProcess", "ContinuousProcess",
-##       def = function(from) {
-##         jSubsetFrom <- jSubset(from)
-##         to <- new("ContinuousProcess",
-##                   equiDistance <- from@equiDistance,
-##                   iSubset <- from@iSubset,
-##                   type <- from@type,
-##                   positionVar <- from@positionVar,
-##                   metaData <- from@metaData,
-##                   dimensions <- from@dimensions,
-##                   colNames <- from@colNames,
-##                   valueEnv <- from@valueEnv,
-##                   idVar <- from@idVar,
-##                   iUnitSubset <- from@iUnitSubset,
-##                   jSubset <- jSubsetFrom[from@type[jSubsetFrom] %in% c("unit", "factor", "numeric")]
-##                   )
-##         return(to)
-##       },
-##       replace = function(from, value) {
-##         if(from@valueEnv == value@valueEnv) {
-##           from@iSubset <- value@iSubset
-##           colNames(from) %in% colNames(value)
-
-##         } else {
-##           stop(paste("Cannot replace ContinuousProcess part of", object, "with", value))
-##         }
-##         return(from)
-##       }
-##       )
-
-
 setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
           function(pointData, continuousData, markVar = 'markType', coarsen = NULL, ...) {            
 
@@ -36,7 +5,6 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
             ## check. Validity function called before returning object
             ## at the end of the contructor.
             pointProcess <- new("MarkedPointProcess") 
-##            as(pointProcess, "ContinuousProcess") <- continuousData
             
             if(continuousData@idVar %in% names(pointData)) {
               id <- pointData[ , continuousData@idVar]
@@ -90,42 +58,9 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
                      markValue[,v], envir = pointProcessEnv)
             }
             
-           
             pointProcess@iPointSubset <- -1L
             pointProcess@jPointSubset <- -1L
             
-
-            
-            ## Compute a combined set of evaluation points and keep track of which
-            ## points are points from the marked point process.
-            ## pointId <- getPointId(pointProcess)
-            ## contId <- getId(pointProcess)
-            ## pointPosition <- getPointPosition(pointProcess)
-            ## contPosition <- getPosition(pointProcess)
-            ## id = factor(c(as.character(pointId), as.character(contId)), levels = levels(contId)),
-            ##                            position = c(pointPosition, contPosition),
-            ##                            pointer = c(seq_along(pointPosition), rep(Inf, length(contPosition))))
-
-            ## evalPosition <- split(evalPosition, evalPosition$id)
-            ## ## Dropping duplicated entries within 'id'.
-            ## dup <- lapply(evalPosition, function(e) duplicated(e$position))
-            ## evalPosition <- sapply(names(evalPosition), function(i) evalPosition[[i]][!(dup[[i]] & evalPosition[[i]]$pointer == Inf), ], simplify = FALSE)
-
-            ## ## Order within 'id'.
-            ## ord <- lapply(evalPosition, function(e) order(e$position))
-            ## evalPosition <- sapply(names(evalPosition), function(i) evalPosition[[i]][ord[[i]], ],  simplify = FALSE)
-
-            ## contPosition <- split(data.frame(pointer = seq_along(contPosition), position = contPosition), contId)
-
-            ## ii <- sapply(names(evalPosition),
-            ##              function(i) {
-            ##                findInterval(evalPosition[[i]]$position,
-            ##                             c(contPosition[[i]]$position, Inf),
-            ##                             all.inside=TRUE)
-            ##              },
-            ##              simplify = FALSE)
-
-            ## ii <- unlist(lapply(names(evalPosition), function(i) contPosition[[i]]$pointer[ii[[i]]]), use.names = FALSE)
             ic <- split(iSubset(continuousData), getId(continuousData))         
             contPosition <- getPosition(continuousData)
             ii <- sapply(names(ic),
@@ -134,7 +69,7 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
                                         contPosition[ic[[i]]])
                          }, simplify = FALSE                         
                          )
-            ## Set any 0-pointer to point to the left most end point.
+            ## Set any 0-pointer to point to the left-most end point.
             ## Computes the pointers in terms of the full data set.
             l <- cumsum(c(0L, sapply(ic, length)[-length(ic)]))
             leftPoints <- which(unlist(ii) == 0L)
@@ -145,15 +80,13 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
               ## Finding exactly duplicated position entries.
               iii <- !(position %in% contPosition[ii])
               ## Setting pointer information.
-              pointPointer <-  ii + cumsum(iii) ## which(orderii > length(i))
+              pointPointer <-  ii + cumsum(iii) 
               pointPointer[leftPoints] <- pointPointer[leftPoints] - 1L
               ## Creating copy of the continuous data part if necessary.
               if(any(iii)) {
-                
                 i <- c(unlist(ic, use.names = FALSE), ii[iii])
                 iSubset(continuousData) <- sort(i)
                 as(pointProcess, "ContinuousProcess") <- continuousProcess(continuousData)
-                ## evalPosition <- do.call("rbind", evalPosition)                 
                 ## TODO: Move pointer to environment, remove points from pointprocess.
                 pointProcess@valueEnv$position[pointPointer] <- position
               } else {
@@ -179,22 +112,10 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
             
             pointProcess@markColNames <-levels(getMarkType(pointProcess))
             pointProcess@markValueColNames <- names(markValue)
-         
-            ## newContData <- c(list(evalPosition$id,
-            ##                       evalPosition$position,
-            ##                       getValue(continuousData)[ii, , drop=FALSE]),
-            ##                  lapply(getFactors(continuousData), function(fac) fac[ii]))
-            ## names(newContData)[1:3] <- c(continuousData@idVar,
-            ##                              continuousData@positionVar,
-            ##                              "value")
-          
-            ## as(pointProcess, "ContinuousProcess") <- continuousProcess(newContData)
-
             
             lockEnvironment(pointProcess@valueEnv, bindings = TRUE)
             validObject(pointProcess)
-            return(pointProcess)
-            
+            return(pointProcess)            
           }
           )
 
@@ -214,7 +135,6 @@ setMethod("markedPointProcess", c("MarkedPointProcess", "missing"),
               warning("No point process data in marked point process, returning a 'ContinuousProcess'", call = FALSE)
               return(continuousData)
             }
-               
           }
           )
 
@@ -268,7 +188,6 @@ setMethod("markedPointProcess", "data.frame",
                         continuousData = pointData[ , c(idVar, positionVar)],
                         positionVar = positionVar, idVar = idVar, markVar = markVar, ...)
             }
-            
           }
           )
 
@@ -291,7 +210,6 @@ setMethod("colNames", c("MarkedPointProcess", "missing"),
             return(colnames)
           }
           )
-
 
 setMethod("colNames", c("MarkedPointProcess", "character"),
           function(object, type, ...) {
@@ -359,20 +277,6 @@ setMethod("integrator", "MarkedPointProcess",
             if(result == 'numeric') 
               return(process)
 
-            ## TODO: could this be done more smooth, without dangerous
-            ## manipulation of the internals of the object?
-             
-            ## CP <- as(object[ , colNames(object) %in% colnames(getUnitData(object))], "ContinuousProcess")
-            ## valueEnv <- new.env(parent = .GlobalEnv)
-            ## valueEnv$id <- getId(CP)
-            ## valueEnv$position <- getPosition(CP)
-            ## valueEnv$value <- Matrix(process, dimnames = list(NULL, "integrated"))
-            ## valueEnv$i <- seq_along(valueEnv$id)
-            ## valueEnv$j <- seq_len(dim(valueEnv$value)[2])
-            ## CP@valueEnv <- valueEnv
-            ## CP@colNames <- c(colNames(CP), "integrated")
-            ## CP@jSubset <- 1L
-            ## validObject(CP)
             CP <- continuousProcess(c(as(object[ , FALSE], "list"),
                                       list(integrated = process)),
                                     idVar = object@idVar,
@@ -433,7 +337,6 @@ setReplaceMethod("jPointSubset", c(object = "MarkedPointProcess", value = "ANY")
                    return(object)
                  }
                  )
-              
 
 setMethod("getPointId", "MarkedPointProcess",
           function(object, drop = TRUE, ...){
@@ -449,7 +352,6 @@ setMethod("getPointId", "MarkedPointProcess",
           }
           )
 
-
 setMethod("getPointPosition", "MarkedPointProcess",
           function(object, ...){
             return(getPosition(object)[getPointPointer(object, ...)])
@@ -461,7 +363,6 @@ setMethod("getPointTime", "MarkedPointProcess",
             getPointPosition(object, ...)
           }
           )
-
 
 setMethod("getMarkType", "MarkedPointProcess",
           function(object, drop = TRUE, ...){
@@ -485,17 +386,8 @@ setMethod("getMarkValue", "MarkedPointProcess",
             } else {
               value <- data.frame()[seq_along(getPointId(object)),]
             }
-            ## if(isTRUE(object@iPointSubset == -1L && object@jSubset == -1L)) {
-            ##     value <- object@pointProcessEnv$markValue
-            ## } else if(isTRUE(object@iPointSubset == -1L)) {
-            ##   value <- object@pointProcessEnv$markValue[ ,jSubset(object), drop = FALSE]
-            ## } else if(isTRUE(object@jSubset == -1L)) {
-            ##   value <- object@pointProcessEnv$markValue[iPointSubset(object), , drop = FALSE]
-            ## } else {
-            ##   value <- object@pointProcessEnv$markValue[iPointSubset(object), jSubset(object), drop = FALSE]
-            ## }
               
-              return(value)
+            return(value)
             }
           )
 
@@ -651,8 +543,6 @@ setMethod("getColumns", c("MarkedPointProcess", "character"),
 setMethod("[", c(x = "MarkedPointProcess", i = "integer", j = "missing"),
           function(x, i, j, ... , drop = FALSE) {
             as(x, "ContinuousProcess") <- callGeneric(as(x, "ContinuousProcess"), i, , )
-##            i <- x@pointProcessEnv$pointPointer %in% iSubset(x)
-##            x@pointPointer <- match(getPointPointer(x)[i], iSubset(x))
             iPointSubset(x) <- iPointSubset(x)[getPointPointer(x) %in% iSubset(x)]
             if(drop) {
               marks <- colNames(x, "mark")
@@ -739,30 +629,6 @@ setMethod("summarizeData", "MarkedPointProcess",
             return(summaryById)            
           }
           )
-
-## setMethod("updateProcessObject", "ContinuousProcess",
-##           function(object, ...) {
-##             pointProcess <- new("MarkedPointProcess",
-##                                 unitData = object@unitData,
-##                                 metaData = object@metaData,
-##                                 iSubset = object@iSubset,
-##                                 jSubset = object@jSubset,
-##                                 idVar = object@idVar,
-##                                 colNames = object@colNames,
-##                                 positionVar = object@positionVar,
-##                                 valueEnv = object@valueEnv,
-##                                 factors = numeric(),
-##                                 iPointSubset = object@iPointSubset,
-## #                                jPointSubset = object@jPointSubset,
-##                                 pointPointer = object@pointPointer,
-##                                 pointProcessEnv = object@pointProcessEnv 
-##                                 ) 
-         
-##             validObject(pointProcess)
-##             return(pointProcess)
-            
-##             }
-##           )
 
 setMethod("unsubset", "MarkedPointProcess",
           function(x, ...) {
