@@ -13,7 +13,7 @@ setClass("ProcessData",
                         ## The valueEnv is assumed to have a data
                         ## frame, unitData, that holds general
                         ## information for each unit for which we have
-                        ## observations and a factor 'id'. 
+                        ## observations, and it contains a factor 'id'. 
                         valueEnv = "environment",
 
                         ## Name of the id variable.
@@ -66,14 +66,7 @@ setClass("ContinuousProcess",
              stop(paste("No", object@idVar, "or", object@idVar, "is not a factor."))
            if(!is.numeric(object@valueEnv$position))
              stop(paste("No", object@positionVar, "or", object@positionVar, "is not a numeric."))
-           ## if(!is(object@valueEnv$value, "matrix"))
-           ##   stop("No 'value' or 'value' is not a matrix.")
-
-           ## Checks that assumed orderings are correct.
-           
-           ## if(any(levels(getId(object)) != rownames(getUnitData(object))) || length(levels(getId(object))) != dim(getUnitData(object))[1]){
-           ##   stop(paste("The levels of", object@idVar, "and the row names of unitData are either not of equal length or in the same order."))
-           ## }
+ 
            id <- getId(object)
            position <- getPosition(object)
            idLevels <- split(seq_along(id), id)
@@ -122,7 +115,7 @@ setClass("MarkedPointProcess",
           
            if(any(levels(getPointId(object)) != rownames(getUnitData(object)))) 
              stop(paste("The point process levels of", object@idVar, "and the row names of unitData are not of equel length or in the same order."))
-           if(any(unlist(tapply(getPointPosition(object), getPointId(object), is.unsorted))))
+           if(any(unlist(lapply(split(getPointPosition(object), getPointId(object)), is.unsorted))))
              stop(paste(object@positionVar,"for the point process data not sorted within", object@idVar))
            
            return(TRUE)
