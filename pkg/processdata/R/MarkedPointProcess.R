@@ -227,6 +227,14 @@ setMethod("markedPointProcess", c("data.frame", "data.frame"),
           }
           )
 
+setMethod("markedPointProcess", c("data.frame", "factor.frame"),
+          function(pointData, continuousData, ..., markVar = 'markType', coarsen = NULL) {
+            callGeneric(pointData = pointData,
+                        continuousData = continuousProcess(continuousData, ...),
+                        markVar = markVar, coarsen = coarsen)
+          }
+          )
+
 setMethod("markedPointProcess", c("data.frame", "vector"),
           function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType', ...) {
             if(!(idVar %in% names(pointData))) {
@@ -492,7 +500,7 @@ setMethod("getMarkValue", "MarkedPointProcess",
           )
 
 setMethod("getPlotData", "MarkedPointProcess",
-          function(object, y = '@mark', nPoints = 200, allUnitData = FALSE, ...){
+          function(object, y = '@mark', nPoints = 200, allUnitData = FALSE,  allMarkValueData = isTRUE(y %in% names(getMarkValue(object))), ...){
             if(length(getMarkType(object)) == 0) {
 
               plotData <- callGeneric(object = as(object, "ContinuousProcess"),
@@ -510,7 +518,7 @@ setMethod("getPlotData", "MarkedPointProcess",
                                       allUnitData = allUnitData,
                                       selectPoints = getPointPointer(object), ...)
               
-              if(isTRUE(y %in% names(getMarkValue(object))))
+              if(allMarkValueData)
                 pointPlotData <- cbind(pointPlotData, getMarkValue(object))
 
               if(isTRUE(allUnitData))
