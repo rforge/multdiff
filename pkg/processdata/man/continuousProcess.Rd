@@ -58,11 +58,12 @@
 
   \item{variableVar}{a \code{character}. Default value \code{'variable'}.}
   
-  \item{equiDistance}{a \code{numeric} specifying the distance between
-    the observations if the observations are equidistant. Setting
-    \code{equiDistance = NULL} implies that the constructor determines
-    if the observations are equidistant. The default value of 0 implies
-    that the observations are assumed non-equidistant.}
+  \item{equiDistance}{a positive \code{numeric} specifying the distance
+    between the observations if the observations are
+    equidistant. Alternatively, setting \code{equiDistance = 'auto'}
+    implies that the constructor determines if the observations are
+    equidistant and computes the equidistance. The default value of 0
+    implies that the observations are treated as non-equidistant.}
 
   \item{...}{ other arguments.}
 

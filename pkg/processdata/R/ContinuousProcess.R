@@ -183,17 +183,21 @@ setMethod("continuousProcess", "list",
               id <- id[ord]
             }
             idLevels <- split(seq_along(id), id)
-
+            
             ## Extracting or setting the 'position' variable
+
+            if(!is.numeric(equiDistance) | equiDistance < 0) 
+              stop("The argument 'equiDistance' is not a non-negative number or equal to 'auto'.")
+            
             if(!(positionVar %in% colNames)) {
               position <- numeric(length(id))
-              if(is.null(equiDistance)) {
+              if(equiDistance == 'auto') {
                 equiDistance <- eqd <- 1
               } else if(equiDistance == 0) {
                 eqd <- 1
               } else {
                 eqd <- equiDistance
-              }
+              } 
               for(v in levels(id)) {
                 position[idLevels[[v]]] <- eqd*seq(0, length(idLevels[[v]])-1)
               }
@@ -203,10 +207,12 @@ setMethod("continuousProcess", "list",
               } else {
                 position <- continuousData[[positionVar]][ord]
               }
-              if(is.null(equiDistance)) {
+              if(equiDistance == 'auto') {
                 uniqueDiff <- unique(sapply(idLevels, function(i) diff(position[i])))
                 if(max(uniqueDiff) - min(uniqueDiff) < .Machine$double.eps ^ 0.5) {
                   equiDistance <- median(uniqueDiff)
+                } else {
+                  equiDistance <- 0
                 }
               }
             }
