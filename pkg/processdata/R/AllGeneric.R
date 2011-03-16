@@ -1,7 +1,6 @@
 ### Generics for package processdata.
 setGeneric("continuousProcess", function(continuousData, ...) standardGeneric("continuousProcess"))
 setGeneric("colNames", function(object, type, ...) standardGeneric("colNames"))
-setGeneric("colNames<-", function(object, value) standardGeneric("colNames<-"))
 setGeneric("getColumns", function(object, j, ...) standardGeneric("getColumns"))
 setGeneric("getEquiDistance", function(object, ...) standardGeneric("getEquiDistance"))
 setGeneric("getId", function(object, ...) standardGeneric("getId"))

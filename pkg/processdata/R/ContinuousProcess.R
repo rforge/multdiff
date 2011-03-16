@@ -208,7 +208,11 @@ setMethod("continuousProcess", "list",
                 position <- continuousData[[positionVar]][ord]
               }
               if(equiDistance == 'auto') {
-                uniqueDiff <- unique(sapply(idLevels, function(i) diff(position[i])))
+                uniqueDiff <- unique(unlist(lapply(idLevels,
+                                                   function(i) {
+                                                     unique(diff(position[i]))
+                                                   }
+                                                   )))
                 if(max(uniqueDiff) - min(uniqueDiff) < .Machine$double.eps ^ 0.5) {
                   equiDistance <- median(uniqueDiff)
                 } else {
