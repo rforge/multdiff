@@ -76,8 +76,7 @@ setMethod("plot", c("ProcessPlotData", "missing"),
             
             if("value" %in% names(x@continuousPlotData)){
               group <- paste(x@idVar, ":variable", sep = "")
-              p <- p + geom_line(aes_string(y = "value",
-                                            group = group))
+              p <- p + geom_line(aes_string(group = group))
             } else {
               p <- p + scale_y_continuous(breaks = x@breaks,
                                           name = "",
@@ -87,15 +86,13 @@ setMethod("plot", c("ProcessPlotData", "missing"),
 
             if(dim(x@factorPlotData)[1] > 0) {
               p <- p + do.call(geom_line, c(list(data = x@factorPlotData,
-                                                 aes_string(y = "value",
-                                                            group = "group")),
+                                                 aes_string(group = "group")),
                                             factorArgs))
               
             }
 
              if(dim(x@pointPlotData)[1] > 0) {
-               p <- p + do.call(geom_point, c(list(data = x@pointPlotData,
-                                                   aes_string(y = "value")),
+               p <- p + do.call(geom_point, c(list(data = x@pointPlotData),
                                                    pointArgs))
             }
 
