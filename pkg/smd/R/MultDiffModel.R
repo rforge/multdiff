@@ -6,6 +6,8 @@ setClass(
          representation = representation(
            data = "ContinuousProcess",
            parameters = "list",
+           sufficientStat = "environment",
+           hasSufficientStat = "logical",   ## Flag to indicate if sufficient statistics are computed 
            "VIRTUAL"
            )
          )
@@ -16,7 +18,7 @@ setClass(
 setMethod(
           "getData",
           "MultDiffModel",
-          function(object){
+          function(object, ...){
             return(object@data)
           }
           )
@@ -28,48 +30,62 @@ setMethod(
 setMethod(
           "getParameters",
           "MultDiffModel",
-          function(object){
+          function(object, ...){
             return(object@parameters)
           }
           )
 
 
 # Method: loss
-# Calculates the value of the type 1 and 2 loss functions
+# Generic calculations of the value of the type 1 and 2 loss functions
 
 setMethod(
           "loss",
           "MultDiffModel",
-          function(object, parameters, equitmp, lossType){
-            data <- as.matrix(getValue(object@data))
+          function(object, parameters = NULL, lossType = 1, ...){
+            data <- getNumerics(object@data)
             if (length(data)==0)
               stop("'object' must contain 'data'")
             n <- dim(data)[1]
-            if (missing(parameters))
-              {parameters <- object@parameters}
-            p <- dim(parameters$A)[1]
-            if (p != dim(data)[2])
-              stop("Mismatch in dimensions of object data and 'parameters'")
+            if (is.null(parameters))
+              parameters <- object@parameters
+            ## Not meaningfull to make general test of dimensions here
+            ## p <- dim(parameters$A)[1]
+            ## if (p != dim(data)[2])
+            ##  stop("Mismatch in dimensions of object data and 'parameters'")
             if (lossType == 1)
               {
-                tmpMean <- condMeanVar(object, parameters, equitmp=equitmp)
-                return(sum((t(data[2:n,])-tmpMean)^2)/2)
+                tmpMean <- condMeanVar(object, parameters)
+                return(sum((t(data[-1, ])-tmpMean)^2))
               }
             if (lossType == 2)
               {
-                tmpMeanVar <- condMeanVar(object, parameters, equitmp=equitmp, var=TRUE)
+                tmpMeanVar <- condMeanVar(object, parameters, var=TRUE)
                 tmpMean <- tmpMeanVar$condMean
                 tmpVar <- tmpMeanVar$condVar
-                centeredObs <- t(data[2:n,]) - tmpMean
-                tmp1 <- rep(NA,n-1)
-                tmp2 <- rep(NA,n-1)
+                centeredObs <- t(data[2:n, ]) - tmpMean
+                tmp1 <- rep(0, n-1)
+                tmp2 <- rep(0, n-1)
                 for (i in 1:(n-1)){
-                  tmp1[i] <- t(centeredObs[,i])%*%solve(tmpVar[,,i],centeredObs[,i])
-                  tmp2[i] <- log(det(tmpVar[,,i]))
+                  tmp1[i] <- t(centeredObs[ , i]) %*% solve(tmpVar[ , , i], centeredObs[ , i])
+                  tmp2[i] <- log(det(tmpVar[ , , i]))
                 }
-                return(sum(tmp1+tmp2)/2)
+                return(sum(tmp1+tmp2))
               }
           }
           )
 
+### Method: getSufficientStat
+### Returns the requested sufficient statistics if it exists.
 
+setMethod(
+          "getSufficientStat",
+          c("OUModel", "character"),
+          function(object, stat, ...) {
+            if(exists(stat, object@sufficientStat)) {
+              return(get(stat, object@sufficientStat))
+            } else {
+              stop(paste("Sufficient statistics", stat, "does not exist."))
+            }
+          }
+          )

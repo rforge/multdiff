@@ -1,0 +1,20 @@
+useDynLib(smd)
+
+export("OUEulerScheme",
+       "coordinateDescent")
+
+exportClasses("MultDiffModel",
+              "OUModel")
+
+exportMethods("getData",
+              "getParameters",
+              "loss",
+              "getSufficientStat",
+              "ouModel",
+              "computeSufficientStat",
+              "hasSufficientStat",
+              "condMeanVar",
+              "gradient",
+              "parToNumeric",
+              "parToList")
+
