@@ -5,7 +5,7 @@ Version: 0.2
 Date: 2011-03-01
 Author: Nina Munkholt, Niels Richard Hansen	
 Maintainer: Nina Munkholt <nina.m@math.ku.dk>
-Depends: expm, methods, processdata, Rcpp
+Depends: expm, methods, processdata (>= 0.7.8), Rcpp
 LinkingTo: Rcpp
 Description: Estimation of high dimensional, discretely observed
 	     diffusions using a strategy which yields a sparse representation of
