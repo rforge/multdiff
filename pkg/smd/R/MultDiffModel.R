@@ -80,7 +80,8 @@ setMethod(
 
 setMethod(
           "getSufficientStat",
-          c("OUModel", "character"),
+          c("MultDiffModel", "character"),
+          ## NM: "OUModel" corrected to "MultDiffModel".
           function(object, stat, ...) {
             if(exists(stat, object@sufficientStat)) {
               return(get(stat, object@sufficientStat))
