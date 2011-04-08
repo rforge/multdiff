@@ -14,8 +14,7 @@
 \title{Class "MultDiffModel"}
 \description{
 
-  \code{MultDiffModel} is a virtual class which represents a
-  multivariate diffusion model.
+  \code{MultDiffModel} is a virtual class which represents multivariate diffusion models.
   
 }
 \section{Objects from the class}{
@@ -46,27 +45,22 @@
     \item{getData}{
       \code{signature(object = "MultDiffModel", ...)}:
       Returns the slot \code{data} as an object of class
-      \code{"ContinuousProcess"}.
+      \code{ContinuousProcess}.
     }
     
     \item{getParameters}{
       \code{signature(object = "MultDiffModel", ...)}:
       Returns the slot \cr \code{parameters} as a \code{list}.
     }
-
-    \item{getSufficientStat}{
-      \code{signature(object = "MultDiffModel", stat, ...)}:
-      ### Description missing ###
-      }
     
     \item{loss}{
       \code{signature(object = "MultDiffModel", parameters = NULL,
 	lossType = 1, ...)}: Returns the value of the
-      type 1 or 2 loss function. Uses \code{data} from \code{object}. If
-      \code{parameters} are missing, the calculations are based on
-      \code{parameters} from \code{object}. If \code{parameters} are not
+      type 1 or 2 loss function. Uses data from \code{object}. If
+      \code{parameters} are missing, the parameters from
+      \code{object} are used. If \code{parameters} are not
       missing, they must be specified as a \code{list} of parameters which
-      are compatible with \code{object}. \code{losstype} must be either
+      are compatible with \code{object}. \code{lossType} must be either
       \code{1} or \code{2}.
     }
     
@@ -74,7 +68,7 @@
  
 }
 
-\author{Nina Munkholt, \email{nina.m@math.ku.dk}, Niels Richard Hansen, \email{Niels.R.Hansen@math.ku.dk}}
+\author{Nina Munkholt, \email{nina.m@math.ku.dk}}
 
 \seealso{
   \code{\linkS4class{OUModel}} 

@@ -20,13 +20,14 @@ License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
 }
 
-What does this package contain?
 
 }
 \author{
-  Nina Munkholt
+  Nina Munkholt \email{nina.m@math.ku.dk},
 
-Maintainer: Nina Munkholt \email{nina.m@math.ku.dk}
+  Niels Richard Hansen \email{Niels.R.Hansen@math.ku.dk}
+
+Maintainer: Nina Munkholt
 }
 \keyword{ package }
 
