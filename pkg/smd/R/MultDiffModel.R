@@ -76,17 +76,16 @@ setMethod(
           )
 
 ### Method: getSufficientStat
-### Returns the requested sufficient statistics if it exists.
+### Returns the requested sufficient statistic if it exists.
 
 setMethod(
           "getSufficientStat",
           c("MultDiffModel", "character"),
-          ## NM: "OUModel" corrected to "MultDiffModel".
           function(object, stat, ...) {
             if(exists(stat, object@sufficientStat)) {
               return(get(stat, object@sufficientStat))
             } else {
-              stop(paste("Sufficient statistics", stat, "does not exist."))
+              stop(paste("Sufficient statistic", stat, "does not exist."))
             }
           }
           )

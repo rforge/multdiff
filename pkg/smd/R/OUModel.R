@@ -227,16 +227,12 @@ setMethod("gradient",
           "OUModel",
           function(object, parameters = NULL, lossType = 1, useSufficientStat = TRUE, ...){
 
-            data <- getNumerics(object@data)
-            if (length(data)==0)
-              stop("'object' must contain 'data'.")
-            n <- dim(data)[1]
             if (is.null(parameters))
               parameters <- object@parameters
             Delta <- getEquiDistance(object@data)
             
             p <- length(parameters$A)
-            if (p != dim(data)[2])
+            if (p != dim(object@data)[2])
               stop("Mismatch in dimensions of object data and 'parameters'")
             if (lossType==1){
               if(useSufficientStat & hasSufficientStat(object) & Delta != 0) {
@@ -254,7 +250,11 @@ setMethod("gradient",
                 B <- -2*t(expmFrechet(DeltaB, Delta*E, expm = FALSE)$Lexpm)
                 A <- Sm1 - (n-1)*tmpExpA - tmpExp %*% Smn
                 A <- 2* t(t(A) %*% tmpExp - t(A))
-              } else {  ## Not using sufficient stat          
+              } else {  ## Not using sufficient stat
+                data <- getNumerics(object@data)
+                if (length(data)==0)
+                  stop("'object' must contain 'data'.")
+                n <- dim(data)[1]
                 if (Delta == 0 || length(Delta) == 0)
                   Delta <- diff(getTime(object@data))
                 m <- length(Delta)
