@@ -3,6 +3,7 @@
 setGeneric("computeSufficientStat", function(object,...){standardGeneric("computeSufficientStat")})
 setGeneric("condMeanVar", function(object,...){standardGeneric("condMeanVar")})
 setGeneric("getData", function(object,...){standardGeneric("getData")})
+setGeneric("getDataMatrix", function(object,...){standardGeneric("getDataMatrix")})
 setGeneric("getParameters", function(object,...){standardGeneric("getParameters")})
 setGeneric("getSufficientStat", function(object, stat, ...) {standardGeneric("getSufficientStat")})
 setGeneric("gradient",function(object,...){standardGeneric("gradient")})

@@ -6,13 +6,14 @@ setClass(
          contains = "MultDiffModel",
          validity = function(object){
            parameters <- object@parameters
-           if(length(parameters)!=0) {
-             if ( (length(parameters)!=3) || (sum(c("A","B","C") %in% names(parameters))!=3) )
+           if(length(parameters) != 0) {
+             if ( (length(parameters) != 3) || (sum(c("A", "B", "C") %in% names(parameters)) != 3) )
                stop("'parameters' must be a list with three components 'A', 'B' and 'C'")
              if ( !is.vector(A) )
                stop("'A' must be a vector")
-             if ( (!is.matrix(parameters$B)) || (!is.matrix(parameters$C)) )
-               stop("'B' and 'C' must all be of class 'matrix'")
+             if (!(is(parameters$B, "matrix") || is(parameters$B, "Matrix"))
+                 || !(is(parameters$C, "matrix") || is(parameters$C, "Matrix")))
+               stop("'B' and 'C' must all be of class 'matrix' or 'Matrix")
              if (dim(parameters$B)[1] != dim(parameters$B)[2])
                stop("'B' must be a square matrix'")
              if (dim(parameters$C)[1] != dim(parameters$C)[2])
@@ -21,9 +22,9 @@ setClass(
                stop("Mismatch in dimensions of 'A', 'B' and 'C'")
              if (!identical(parameters$C, t(parameters$C)))
                stop("'C' must be symmetric")
-             if (!isTRUE(all.equal(min(eigen(parameters$C,only.values = TRUE, symmetric = TRUE)$values,0),0)))
+             if (!isTRUE(all.equal(min(eigen(parameters$C,only.values = TRUE, symmetric = TRUE)$values, 0), 0)))
                stop("'C' must be positive semidefinite")
-             p <- dim(getValue(object@data))[2]
+             p <- dim(getDataMatrix(object))[1]
              if (p!=0) {
                if (length(parameters$A) != p)
                  stop("Mismatch in dimensions of 'data' and 'A'")
@@ -42,9 +43,13 @@ setMethod(
           "ouModel",
           c("ContinuousProcess"),
           function(data, A, B, C, computeSufficient = TRUE, ...) {
+
+            dataMatrix <- new.env(parent = .GlobalEnv)
+            dataMatrix$dataMatrix <- t(getNumerics(data))
             
             .object <- new("OUModel",
                            data = data,
+                           dataMatrix = dataMatrix,
                            parameters = list(
                              A = A,
                              B = B,
@@ -101,7 +106,7 @@ setMethod(
             if(lossType == 2 || !useSufficientStat || Delta == 0)
               return(callNextMethod(object = as(object, "MultDiffModel"),
                                  parameters = parameters,
-                                 lossType = lossType))
+                                 lossType = lossType, ...))
 
             if(is.null(parameters))
               parameters <- getParameters(object)
@@ -112,7 +117,7 @@ setMethod(
             SS <- getSufficientStat(object, "SS")
             SsS <- getSufficientStat(object, "SsS")
             n <- dim(object@data)[1]
-            tmpExp <- expm(Delta*parameters$B)
+            tmpExp <- expm(Delta*parameters$B, ...)
             tmpExpA <- parameters$A - tmpExp %*% parameters$A
             l <- normObs +
               sum(crossprod(tmpExp) * SS) +
@@ -120,7 +125,7 @@ setMethod(
               2*((tcrossprod(Smn, tmpExp) - Sm1) %*% tmpExpA -
                  sum(tmpExp * SsS))
             
-            return(l)
+            return(l[1,1])
           }
           )
 
@@ -135,50 +140,59 @@ setMethod(
             if (missing(parameters)) 
               parameters <- getParameters(object)
             if (length(parameters)==0)
-              stop("'object' must contain 'parameters' or 'parameters' must be specified")
+              stop("'Object' must contain 'parameters' or 'parameters' must be specified")
             p <- length(parameters$A)
             
             if (missing(t) & !missing(x))
               stop("If 'x' is specified, 't' must be specified as well")
             if (!missing(t) & missing(x))
               stop("If 't' is specified, 'x' must be specified as well")
+
+            if (is(parameters$B, "CsparseMatrix")) {
+              package <- "expokit"
+            } else if (is(parameters$B, "Matrix")){
+              package <- "Matrix"
+            } else {
+              package <- "expm"
+            }
             
-            if (missing(t) & missing(x)){
+            if (missing(t) & missing(x)) {
               t <- getEquiDistance(object@data)
-              if (t==0 || length(t)==0)
+              if (t == 0 || length(t) == 0 || package == "expokit")
                 t <- diff(getTime(object@data))
               m <- length(t)
-              if (m==0)
-                stop("Object must contain data or 'x' and 't' must be specified.")
-              tmpx <- as.matrix(getValue(object@data))
-              N <- dim(tmpx)[1]-1
-              x <- tmpx[1:N, ]
+              if (m == 0)
+                stop("Object must contain data or 'x' and 't' must be specified")
+              x <- getDataMatrix(object)
+              N <- dim(x)[2]-1
+              x <- x[, -(N+1)]
             } else {
-              m <- length(t)
-              N <- dim(x)[1]
               if (!is.matrix(x))
                 stop("'x' must be a matrix of class 'matrix'.")
+              N <- dim(x)[1]
+              if(package == "expokit" & length(t) == 1)
+                t <- rep(t, N)
+              m <- length(t)
               if (!(m %in% c(1,N)))
-                stop("Mismatch in dimensions of 'x' and 't'.")
+                stop("Mismatch in dimensions of 'x' and 't'.")             
             }
 
-            if (p != dim(x)[2])
+            if (p != dim(x)[1])
               stop("Mismatch in dimensions of 'x' and parameters of 'object'.")
             if (!is.logical(var))
               stop("'var' must be logical.")
             
             if (!var) # The conditional variance is not computed
               {
-                tmpMean <-  array(, dim=c(p,N))
                 if (m == 1){
-                  tmpExp <- expm(t*parameters$B)
-                  ## TODO: Reformulate as matrix computations
-                  for (i in 1:N){
-                    tmpMean[ , i] <- parameters$A + tmpExp %*% (x[i, ]-parameters$A)
-                  }
+                  tmpExp <- expm(t*parameters$B, package = package, ...)
+                  tmpMean <- parameters$A + tmpExp %*% (x - parameters$A)
                 } else {
-                  for (i in 1:N){
-                    tmpMean[ , i] <- parameters$A + expm(t[i]*parameters$B) %*% (x[i, ]-parameters$A)
+                  tmpMean <-  array(, dim=c(p,N))
+                  for (i in 1:N) {
+                    tmpMean[, i] <- parameters$A +
+                      expm(t[i]*parameters$B, v = x[, i] - parameters$A,
+                           package = package, ...)
                   }
                 }
                 return(tmpMean)

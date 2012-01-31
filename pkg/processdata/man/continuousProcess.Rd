@@ -62,7 +62,7 @@
     between the observations if the observations are
     equidistant. Alternatively, setting \code{equiDistance = 'auto'}
     implies that the constructor determines if the observations are
-    equidistant and computes the equidistance. The default value of 0
+    equidistant and computes the value of \code{equiDistance}. The default value of 0
     implies that the observations are treated as non-equidistant.}
 
   \item{...}{ other arguments.}

@@ -5,16 +5,14 @@ setClass("ProcessData",
                         ## on the experiment or procedure by which the
                         ## data is obtained.
                         metaData = "list",
-                        equiDistance = "numeric",
 
                         ## Column names.
                         unitColNames = "character",
 
-
                         ## The valueEnv is assumed to have a data
                         ## frame, unitData, that holds general
                         ## information for each unit for which we have
-                        ## observations, and it contains a factor 'id'. 
+                        ## observations. Each row name is the unit id. 
                         valueEnv = "environment",
 
                         ## Name of the id variable.
@@ -42,7 +40,7 @@ setClass("ProcessData",
 setClass("ContinuousProcess",
          representation(
 
-                        ## Column names.
+                        ## Additional column names.
                         factorColNames = "character",
                         numericColNames = "character",
 
@@ -52,7 +50,8 @@ setClass("ContinuousProcess",
                         jSubset = "integer",
                         
                         ## Name of the position variable.
-                        positionVar = "character"
+                        positionVar = "character",
+                        equiDistance = "numeric"
 
                         ## The 'valueEnv' will also contain the following 
                         ## components of the data:

@@ -43,7 +43,7 @@ GNcoordinateDescent <- function(beta, f, gr, quad,
           beta0 <- beta[ , j]
           beta0i <- beta[i , j]
           alpha <-  quad(i, beta[ , j])
-          di <- -2*alpha*beta0i + grad[i]
+          di <- grad[i] - 2*alpha*beta0i
           if(abs(di) <= lambda[j]) {
             beta[i, j] <- 0
           } else { ## abs(di) > lambda[j]
@@ -69,18 +69,109 @@ GNcoordinateDescent <- function(beta, f, gr, quad,
   return(list(lambda = lambda, beta = beta))
 }
 
+## An attempt to write a better version using cubic approximations.
+
+GNcoordinateDescentMod <- function(beta, f, gr, quad,
+                                lambda = 1,
+                                reltol = sqrt(.Machine$double.eps),
+                                epsilon = 0,
+                                trace = 0) {
+  if(trace > 0)
+    cat("lambda\tdf\tpenalty\t\tloss+penalty\n")
+  beta <- matrix(beta, nrow = length(beta), ncol = length(lambda))
+  pIndex <- seq_len(dim(beta)[1])
+  lambda <- sort(lambda, decreasing = TRUE)
+  for(j in seq_along(lambda)){
+    if(j > 1) 
+      beta[ , j] <- beta[ , j - 1]
+    pen <- lambda[j]*sum(abs(beta[ , j]))
+    val <-  f(beta[ , j]) + pen
+    grad = gr(beta[ , j])
+    repeat {
+      oldval <- val
+      for(i in pIndex) {
+        if(i == 20)
+          browser()
+        if(beta[i, j] == 0) {
+          if(abs(grad[i]) > lambda[j]) {
+            beta0 <- beta[ , j]
+            alpha <-  2*quad(i, beta[ , j]) + epsilon
+            if(grad[i] < -lambda[j]) {
+              beta[i, j] <- -(lambda[j] + grad[i])/alpha
+            } else {  ## grad[i] > lambda[j]
+              beta[i, j] <- (lambda[j] - grad[i])/alpha
+            }
+            pen <- pen + lambda[j]*abs(beta[i, j])
+            grad <- gr(beta[ , j])
+          }
+        } else { ## beta[i, j] != 0
+          beta0i <- beta[i, j]
+          alpha <-  2*quad(i, beta[ , j]) + epsilon
+          di <- grad[i] - alpha*beta0i
+          ## Stick to quadratic approximation
+          if(abs(di) > lambda[j]) {
+            if (di < -lambda[j]) {
+              beta[i, j] <- beta0i - (lambda[j] + grad[i])/alpha
+            } else { ## di > lambda[j] 
+              beta[i, j] <- beta0i + (lambda[j] - grad[i])/alpha
+            }
+          } else { ## Turn to cubic approximation
+            beta0 <- beta[, j]
+            beta0[i] <- 0
+            di <- gr(beta0)[i]
+            aa <- (alpha*beta0i + di - grad[i])/beta0i^2
+            bb <- alpha - 2*aa*beta0i
+            ## Is 0 a local minima or is di and beta0i of the same sign?
+            if(abs(di) <= lambda[j] || di*beta0i > 0) {
+              beta[i, j] <- 0
+            } else { ## abs(di) > lambda[j] and di and beta0i of opposite sign
+              if (di < -lambda[j]) {
+                ##   if(grad[i] >= 0) {
+                ##     beta[i, j] <-  - beta0i*(lambda[j] + di)/(grad[i] - lambda[j] - di)
+                ##   } else { ## grad[i] < 0
+                ##     alpha <-  2*quad(i, beta[ , j])
+                beta[i, j] <- (-bb - sqrt(bb^2 - 4*aa*(di + lambda[j])))/(2*aa)
+                ## beta[i, j] <- beta0i - (lambda[j] + grad[i])/alpha
+              } else { ## di > lambda[j] and di and beta0i of opposite sign
+                ## if(grad[i] <= 0) {
+                ##  beta[i, j] <- beta0i*(lambda[j] - di)/(grad[i] - di + lambda[j])
+                ## } else {
+                ##  alpha <-  2*quad(i, beta[ , j])
+                beta[i, j] <- (-bb + sqrt(bb^2 - 4*aa*(di - lambda[j])))/(2*aa)
+                ## beta[i, j] <- beta0i + (lambda[j] - grad[i])/alpha
+              }
+            }
+          }
+          pen <- pen + lambda[j]*(abs(beta[i, j]) - abs(beta0i))
+          grad <- gr(beta[ , j])
+        }
+      }
+      val <- f(beta[ , j]) + pen
+      if(val <= oldval && oldval-val < reltol*(abs(val) + reltol))
+        break
+      if(trace == 2)
+        cat(lambda[j], "\t", sum(abs(beta[,j]) > 0), "\t", pen, "\t", val, "\n")
+    }
+    if(trace == 1)
+      cat(lambda[j], "\t", sum(abs(beta[,j]) > 0), "\t", pen, "\t", val, "\n")
+  }
+  return(list(lambda = lambda, beta = beta))
+}
+
 ## Non-optimal solution based on 'optimize'. This solution solves the
 ## coodinate wise optimizations in a generic way based on the
 ## 'optimize' function. It is relatively slow.
 
-coordinateDescent <- function(beta, f, gr, lambda = 1, reltol = sqrt(.Machine$double.eps), epsilon = 0, gamma = 1e-2) {
+coordinateDescent <- function(beta, f, gr, lambda = 1, reltol = sqrt(.Machine$double.eps), epsilon = 0, gamma = 1e-2, trace = 0) {
+  if(trace > 0)
+    cat("lambda\tdf\tpenalty\t\tloss+penalty\n")
   gamma0 <- gamma
   beta <- matrix(beta, nrow = length(beta), ncol = length(lambda))
   pIndex <- seq_len(dim(beta)[1])
   for(j in seq_along(lambda)){
-    pen <- lambda[j]*sum(abs(beta[ , j]))
     if(j > 1) 
       beta[ , j] <- beta[ , j - 1]
+    pen <- lambda[j]*sum(abs(beta[ , j]))
     val <-  f(beta[ , j]) + pen
     grad = gr(beta[ , j])
     repeat {
@@ -95,6 +186,7 @@ coordinateDescent <- function(beta, f, gr, lambda = 1, reltol = sqrt(.Machine$do
                 f(beta0) + lambda[j]*b
               }
               beta[i, j] <- optimize(tmpf, c(0, gamma0))$minimum
+            } else {
               tmpf <- function(b) {
                 beta0[i] <- b
                 f(beta0) - lambda[j]*b
@@ -107,28 +199,33 @@ coordinateDescent <- function(beta, f, gr, lambda = 1, reltol = sqrt(.Machine$do
         } else {
           beta0 <- beta[ , j]
           beta0i <- beta[i , j]
-          if(beta0i > 0) {
-             tmpf <- function(b) {
+          beta0[i] <- 0
+          if (abs(gr(beta0)[i]) <= lambda[j]) {
+            beta[i, j] <- 0
+          } else {
+            if (beta0i > 0) {
+              tmpf <- function(b) {
                 beta0[i] <- b
                 f(beta0) + lambda[j]*b
               }
-              beta[i, j] <- optimize(tmpf, c(0, beta0i+gamma0))$minimum
-           } else { ## beta0i < 0
-            tmpf <- function(b) {
-              beta0[i] <- b
-              f(beta0) - lambda[j]*b
+              beta[i, j] <- optimize(tmpf, c(0, beta0i + gamma0))$minimum
+            } else { ## beta0i < 0
+              tmpf <- function(b) {
+                beta0[i] <- b
+                f(beta0) - lambda[j]*b
+              }
+              beta[i, j] <- optimize(tmpf, c(beta0i - gamma0, 0))$minimum
             }
-            beta[i, j] <- optimize(tmpf, c(beta0i-gamma0, 0))$minimum
           }
           pen <- pen + lambda[j]*(abs(beta[i, j]) - abs(beta0i))
           val <- f(beta[ , j]) + pen
           grad <- gr(beta[ , j])
         }
       }
-      if(oldval-val < reltol*(abs(val) + reltol))
+      if(val <= oldval && oldval-val < reltol*(abs(val) + reltol))
         break
-      cat(j, lambda[j], sum(abs(beta[,j]) > 0), f(beta[ ,j]) + lambda[j]*sum(abs(beta)), val, "\n")
-    }
+      if(trace == 1)
+        cat(lambda[j], "\t", sum(abs(beta[,j]) > 0), "\t", pen,  "\t", val, "\n")    }
   }
   return(list(lambda = lambda, beta = beta))
 }

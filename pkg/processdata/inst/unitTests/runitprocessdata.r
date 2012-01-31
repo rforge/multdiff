@@ -485,20 +485,31 @@ test.subscripting <- function() {
   subscripting(CP["1", ])
   subscripting(MP["1", ])
 
-  subscripting(PD[ ,1])
-  subscripting(CP[ ,c(1,3)])
-  subscripting(MP[ ,c(1,3,5)])
+  subscripting(PD[, 1])
+  subscripting(CP[, c(1,3)])
+  subscripting(MP[, c(1,3,5)])
 
   subscripting(PD[1:3, 1])
   subscripting(CP[1:3, c(1,3)])
   subscripting(MP[1:3, c(1,3,5)])
 
-  checkEquals(class(MP[ ,1:4, drop = TRUE]), class(CP))
+  checkEquals(class(MP[, 1:4, drop = TRUE]), class(CP))
   checkEquals(dim(MP[c(1,3:8), ]), c(7,7))
   checkEquals(dim(MP[c(1,3:8), , drop = TRUE]), c(7,6))
+  checkEquals(MP[c(1, 3:8), c(1, 5:6), drop = TRUE],
+              MP[, c(1, 5:6), drop = TRUE][c(1, 3:8), , drop = TRUE])
   checkEquals(dim(MP[c(1,4,5,8), , drop = TRUE]), c(4,4))
+
+  checkEquals(dim(MP[1, 1:7]), c(1,7))
+  checkEquals(colNames(MP[1, 1:7]), c("A", "B", "value", "group", "pA", "pB", "size"))
+  checkEquals(dim(MP[1, 1:7, drop = TRUE]), c(1,4))
+  checkEquals(colNames(MP[1, 1:7, drop = TRUE]),  c("A", "B", "value", "group"))
+  
+  checkEquals(getPointPosition(MP[2, ][1, ]), 1.1)
   
 }
+
+
 
 ## Helper function to check subsetting. Combines the two expressions
 ## subset1 and subset2 in different ways and compares the result of
@@ -606,15 +617,15 @@ test.subsetting <- function() {
   checkEquals(subset(PD, select = B), PD[,2])
 
   ## Checking 'ContinuousProcess' selection of rows.
-  checkEquals(subset(CP, select = A), CP[,1])
-  checkEquals(subset(CP, select = -A), CP[,-1])
-  checkEquals(subset(CP, select = A:value), CP[,1:3])
-  checkEquals(subset(CP, select = c(value,group)), CP[,3:4])
+  checkEquals(subset(CP, select = A), CP[, 1])
+  checkEquals(subset(CP, select = -A), CP[, -1])
+  checkEquals(subset(CP, select = A:value), CP[, 1:3])
+  checkEquals(subset(CP, select = c(value,group)), CP[, 3:4])
 
   ## Checking 'MarkedPointProcess' selection of rows.
-  checkEquals(subset(MP, select = -pA), MP[,-5])
-  checkEquals(subset(MP, select = c(A, value, pB)), MP[,c(1,3,6)])
+  checkEquals(subset(MP, select = -pA), MP[, -5])
+  checkEquals(subset(MP, select = c(A, value, pB)), MP[, c(1,3,6)])
   checkEquals(subset(MP, select = A:size), MP)
-  checkEquals(subset(MP, select = c(A, size)), MP[,c(1,7)])
+  checkEquals(subset(MP, select = c(A, size)), MP[, c(1,7)])
 
 }

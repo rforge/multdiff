@@ -132,13 +132,12 @@ setMethod("continuousProcess", "ContinuousProcess",
                         metaData = continuousData@metaData,
                         positionVar = continuousData@positionVar,
                         idVar = continuousData@idVar,
-                        .dont_test_dimensions = TRUE)
+                        .dont_test_dimensions = TRUE, ...)
           }
           )
                    
 setMethod("continuousProcess", "list",
           function(continuousData, unitData = data.frame(), metaData = list(), positionVar = 'time', idVar = 'id', equiDistance = 0, ...){
-
 
             ## Checking, if required, if the dimensions are correct
             ## and that there are names on all entries in the list.
@@ -185,7 +184,6 @@ setMethod("continuousProcess", "list",
             idLevels <- split(seq_along(id), id)
             
             ## Extracting or setting the 'position' variable
-
             if(!is.numeric(equiDistance) | equiDistance < 0) 
               stop("The argument 'equiDistance' is not a non-negative number or equal to 'auto'.")
             
@@ -331,6 +329,19 @@ setMethod("dim", "ContinuousProcess",
           }
           )
 
+setMethod("getEquiDistance", "ContinuousProcess",
+          function(object, ...) {
+            ## TODO: Can this way to handle subsets wrt equi-distance
+            ## be improved? This solution just ignores the
+            ## equiDistance slot for subsets!
+            if(identical(object@iSubset[1], -1L)) {
+              return(object@equiDistance)
+            } else {
+              return(0)
+            }
+          }
+          )
+
 setMethod("iSubset", "ContinuousProcess",
           function(object) {
             if(identical(object@iSubset[1], -1L)) {
@@ -357,6 +368,7 @@ setMethod("jSubset", "ContinuousProcess",
 
 setReplaceMethod("iSubset", c(object = "ContinuousProcess", value = "numeric"),
                  function(object, value) {
+                   value <- value[!is.na(value)]
                    if(length(value) == length(object@valueEnv$id) && 
                       identical(value, seq_along(object@valueEnv$id))) {
                      object@iSubset <- -1L
@@ -370,6 +382,7 @@ setReplaceMethod("iSubset", c(object = "ContinuousProcess", value = "numeric"),
 
 setReplaceMethod("jSubset", c(object = "ContinuousProcess", value = "numeric"),
                  function(object, value) {
+                   value <- value[!is.na(value)]
                    d2 <- length(object@numericColNames) + length(object@factorColNames)
                    if(length(value) == d2 && identical(value, seq_len(d2))) {
                      object@jSubset <- -1L
@@ -612,7 +625,10 @@ setMethod("getPlotData", "ContinuousProcess",
             tmp <- getNumerics(object)
            
             measureVar <- colnames(tmp)
-            tmp <- cbind(tmp, data.frame(iSubset = I(i)))
+            ### There was previously a protection using 'I(i)' in this call, but
+            ### it created problems with 'melt' from the reshape2
+            ### version 1.2.1
+            tmp <- cbind(tmp, data.frame(iSubset = i))
             
             continuousPlotData <- data.frame(getId(object))
             names(continuousPlotData)[1] <- object@idVar
@@ -720,8 +736,8 @@ setMethod("summarizeData", "ContinuousProcess",
 
               for(j in colNames(object, "numeric")) {
                 column <- getColumns(object, j)
-                sumVal[[paste("mean(", j ,")", sep ="")]] <- 
-                  sapply(splitEntries, function(e) mean(column[e]))
+                sumVal[[paste("median(", j ,")", sep ="")]] <- 
+                  sapply(splitEntries, function(e) median(column[e]))
               }
               
               summaryById <- cbind(summaryById, positionSummary)
@@ -769,7 +785,6 @@ setMethod("simpleSummary", "ContinuousProcess",
           }
           )
         
-
 setMethod("show", "ContinuousProcess",
           function(object) {
             d <- dim(object)
@@ -787,7 +802,8 @@ setMethod("show", "ContinuousProcess",
 setMethod("summary", "ContinuousProcess",
            function(object) {
              print(object)
-             print(summarizeData(object))
+             if(dim(object)[1] > 0) 
+               print(summarizeData(object))
              return(invisible(NULL))
            }
            )

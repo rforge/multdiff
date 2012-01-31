@@ -40,11 +40,11 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
             }
                         
             if(markVar %in% names(pointData)) {
-              markType <- pointData[ , markVar]
+              markType <- pointData[, markVar]
             } else {
               markType <-  rep("point", dim(pointData)[1])
             }
-            markValue <- pointData[ ,!(names(pointData) %in%
+            markValue <- pointData[, !(names(pointData) %in%
                                        c(continuousData@idVar,
                                          continuousData@positionVar,
                                          markVar)),
@@ -73,12 +73,15 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
             ## Computes the pointers in terms of the full data set.
             l <- cumsum(c(0L, sapply(ic, length)[-length(ic)]))
             leftPoints <- which(unlist(ii) == 0L)
-            ii <- as.integer(unlist(lapply(seq_along(l), function(i) ii[[i]] + l[[i]])), use.names = FALSE)
+            ii <- as.integer(unlist(lapply(seq_along(l),
+                                           function(i) ii[[i]] + l[[i]])),
+                             use.names = FALSE)
             ii[leftPoints] <- ii[leftPoints] + 1L
 
             if(is.null(coarsen)) {
               ## Finding exactly duplicated position entries.
-              iii <- !(position %in% contPosition[ii])
+              dup <- duplicated(position)
+              iii <- !(position %in% contPosition[ii]) & !dup
               ## Setting pointer information.
               pointPointer <-  ii + cumsum(iii) 
               pointPointer[leftPoints] <- pointPointer[leftPoints] - 1L
@@ -88,7 +91,7 @@ setMethod("markedPointProcess", c("data.frame", "ContinuousProcess"),
                 iSubset(continuousData) <- sort(i)
                 as(pointProcess, "ContinuousProcess") <- continuousProcess(continuousData)
                 ## TODO: Move pointer to environment, remove points from pointprocess.
-                pointProcess@valueEnv$position[pointPointer] <- position
+                pointProcess@valueEnv$position[pointPointer[!dup]] <- position[!dup]
               } else {
                 as(pointProcess, "ContinuousProcess") <- continuousData
               }
@@ -311,23 +314,22 @@ setMethod("jPointSubset", "MarkedPointProcess",
           }
           )
 
-setReplaceMethod("iPointSubset", c(object = "MarkedPointProcess", value = "ANY"),
+setReplaceMethod("iPointSubset", c("MarkedPointProcess", "ANY"),
                  function(object, value) {
+                   value <- value[!is.na(value)]
                    if(length(value) == length(object@pointProcessEnv$id) &&
                       identical(value, seq_along(object@pointProcessEnv$id))) {
                      object@iPointSubset <- -1L
                    } else {
                      object@iPointSubset <- value
-                     ## We find the, potentially, new pointers. 
-                     object@pointPointer <- match(object@pointProcessEnv$pointPointer[value],
-                                                  iSubset(object))
                    }
                    return(object)
                  }
                  )
 
-setReplaceMethod("jPointSubset", c(object = "MarkedPointProcess", value = "ANY"),
+setReplaceMethod("jPointSubset", c("MarkedPointProcess", "ANY"),
                  function(object, value) {
+                   value <- value[!is.na(value)]
                    d2 <- length(object@markColNames) + length(object@markValueColNames)
                    if(length(value) == d2 && identical(value, seq_len(d2))) {
                      object@jPointSubset <- -1L
@@ -494,6 +496,7 @@ setMethod("subset", "MarkedPointProcess",
             }
             if(!all(r)) {
               iPointSubset(y) <- iPointSubset(y)[r]
+              setPointPointer(y) <- getPointPointer(y)[r]
             } 
             return(y)
           }
@@ -542,8 +545,13 @@ setMethod("getColumns", c("MarkedPointProcess", "character"),
 
 setMethod("[", c(x = "MarkedPointProcess", i = "integer", j = "missing"),
           function(x, i, j, ... , drop = FALSE) {
+            orgPoint <- iSubset(x)[getPointPointer(x)]
             as(x, "ContinuousProcess") <- callGeneric(as(x, "ContinuousProcess"), i, , )
-            iPointSubset(x) <- iPointSubset(x)[getPointPointer(x) %in% iSubset(x)]
+            newPointPointer <- match(orgPoint, iSubset(x))
+            notNA <- which(!is.na(newPointPointer))
+            iPointSubset(x) <- iPointSubset(x)[notNA]
+            setPointPointer(x) <- newPointPointer[notNA]
+            
             if(drop) {
               marks <- colNames(x, "mark")
               dropCol <- colNames(x) %in% marks[!(marks %in% levels(getMarkType(x)))]
@@ -567,10 +575,11 @@ setMethod("[", c(x = "MarkedPointProcess", i = "missing", j = "character"),
                   x <- as(x, "ContinuousProcess")
                 } else {
                   iPointSubset(x) <- integer()
-                  jPointSubset(x) <- integer()
+                  jPointSubset(x) <- which(c(x@markColNames, x@markValueColNames) %in% j)
                 }
               } else {
                 iPointSubset(x) <- iPointSubset(x)[i]
+                setPointPointer(x) <- getPointPointer(x)[i]
                 jPointSubset(x) <- which(c(x@markColNames, x@markValueColNames) %in% j)
               }
             }
@@ -602,6 +611,19 @@ setMethod("object.size", "ProcessData",
                                function(name) object.size(get(name, envir = x@vpointProcessEnv))))
             size <- size + object.size(as(x, "ContinuousProcess"))
             return(structure(size, class = "object_size"))
+          }
+          )
+
+setReplaceMethod("setPointPointer", c("MarkedPointProcess", "ANY"),
+          function(object, value) {
+            if(identical(object@iSubset[1], -1L) &&
+               identical(object@iPointSubset[1], -1L)) {
+              object@pointPointer <- -1L
+            } else {
+              object@pointPointer <- value
+            }
+            
+            return(object)
           }
           )
 

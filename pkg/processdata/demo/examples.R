@@ -35,7 +35,7 @@ plot(subset(contExam, subset = (time > 4 & gender == "F"), select = foo))
 ## Modifying plot using ggplot2.
 
 plot(subset(contExam, id == "A")) + geom_point()
-plot(contExam) + facet_grid(.~.)
+plot(contExam) + facet_null()
 
 ## More sophisticated plots can be produced, e.g. different uses of
 ## faceting and grouping.
@@ -81,7 +81,7 @@ plot(pointExam[,-(1:3)])
 
 ## Or a slightly different version.
 
-plot(pointExam[,-(1:3)], y = "id") + facet_grid(.~.)
+plot(pointExam[,-(1:3)], y = "id") + facet_null()
 
 ## Plotting the continuous process data only.
 
@@ -98,7 +98,7 @@ plot(pointExam, y = "id", allUnitData = TRUE) + facet_grid(variable~gender, scal
 plot(pointExam, y = "foo") 
 plot(pointExam, y = "@top", allUnitData = TRUE) + facet_grid(.~gender)
 plot(pointExam, y = "@bottom", allUnitData = TRUE) + facet_grid(gender~., scales = "free_y")
-plot(pointExam, y = "id") + facet_grid(.~.)
+plot(pointExam, y = "id") + facet_null()
 
 ## A 'JumpProcess' data set has points with the same marks as the variable names
 ## in the 'ContinuousProcess' part of the data set. In addition, to each point

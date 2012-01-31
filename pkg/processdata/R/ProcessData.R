@@ -47,12 +47,6 @@ setMethod("colNames", c("ProcessData", "character"),
           }
           )
 
-setMethod("getEquiDistance", "ProcessData",
-          function(object, ...) {
-            return(object@equiDistance)
-          }
-          )
-
 setMethod("getUnitData", "ProcessData",
           function(object, ...) {
             if(identical(object@iUnitSubset[1], -1L)) {
@@ -109,6 +103,7 @@ setMethod("jUnitSubset", "ProcessData",
 
 setReplaceMethod("iUnitSubset", c(object = "ProcessData", value = "numeric"),
                  function(object, value) {
+                   value <- value[!is.na(value)]
                    if(length(value) == dim(object@valueEnv$unitData)[1] &&
                       identical(value, seq_len(dim(object@valueEnv$unitData)[1]))) {
                      object@iUnitSubset <- -1L
@@ -123,6 +118,7 @@ setReplaceMethod("iUnitSubset", c(object = "ProcessData", value = "numeric"),
 
 setReplaceMethod("jUnitSubset", c(object = "ProcessData", value = "numeric"),
                  function(object, value) {
+                   value <- value[!is.na(value)]
                    if(length(value) == length(object@unitColNames) &&
                       identical(value, seq_along(object@unitColNames))) {
                      object@jUnitSubset <- -1L
@@ -210,8 +206,8 @@ setMethod("[", "ProcessData",
             if(!(class(j) %in% c("logical", "numeric", "integer", "character")))
               stop("j needs to be a 'logical', a 'numeric' or a 'character' vector.")
             
-            x <- callGeneric(x, i, , drop = drop)
-            x <- callGeneric(x, , j, drop = drop)
+            x <- callGeneric(x, , j, drop = drop)  ## Order matters. Subsetting of rows
+            x <- callGeneric(x, i, , drop = drop)  ## with drop = TRUE can remove cols.
             return(x)
           }
           )

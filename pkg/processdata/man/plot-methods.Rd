@@ -111,7 +111,7 @@
   the \code{ggplot2} objects. For instance, with many units and \code{p}
   the value of the \code{plot} call, the plot
 
-  \code{p + facet_grid(. ~ .)}
+  \code{p + facet_null()}
 
   can be a useful alternative to the default. For \code{ContinuousProcess} objects
   with many units and few variables, one can also consider 

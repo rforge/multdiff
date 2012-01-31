@@ -39,12 +39,12 @@ Email address: Niels.R.Hansen@math.ku.dk}, \emph{University of Copenhagen} \\
 
 <<echo = FALSE>>=
 library(processdata)
-set.seed(123456)
+set.seed(10101)
 @ 
 
 \section{Summary}
 
-The package \verb+processdata+ implements a simple hierarchy of S4
+The package \verb+processdata+ implements a hierarchy of S4
 classes for storing data for discretely observed, multivariate
 stochastic processes. 
 
@@ -87,11 +87,11 @@ continuous process data.
 
 \subsection{The first object}
 
-A bivariate Brownian motion can easily be represented in R as a $n
+A bivariate Brownian motion can be represented in R as a $n
 \times 2$ matrix, e.g.
 
 <<BM>>=
-n <- 2000
+n <- 2001
 p <- 2
 X <- apply(matrix(rnorm(n*p), n, p), 2, cumsum)
 @ 
@@ -106,8 +106,8 @@ processX <- continuousProcess(X)
 
 The resulting object can be printed, which only shows minimal
 structural information, and it can be summarized, which provides
-addtional information -- in the case of continuous variables the
-default is to compute the mean per variable.  
+additional information -- in the case of continuous variables the
+default is to compute the median per variable.  
 
 <<processBMsummary>>=
 print(processX)
@@ -118,14 +118,14 @@ The constructor makes a number of decisions, since the raw data set in
 \verb+X+ does not contain any information on variable names, time
 points of observations etc. In this case it automatically labels the
 variables \verb+V1+ and \verb+V2+, and assumes that the observations
-are equidistant and observed at time points \verb+0, 1, ..., 1999+. The
-summary tells us that the data set contains 2000 observations (the
-number of grid points in the observation grid) in the observation window from 0 to 1999. 
+are equidistant and observed at time points \verb+0, 1, ..., 2000+. The
+summary tells us that the data set contains 2001 observations (the
+number of grid points in the observation grid) in the observation window from 0 to 2000. 
 
 We can instead provide the information for the constructor. 
 
 <<argmentedBM>>=
-X <- cbind(seq(1/n, 1, by = 1/n), X)
+X <- cbind(seq(0, 1, length.out = n), X)
 colnames(X) <- c("time", "Brownian", "Motion")
 processX <- continuousProcess(X)
 @ 
@@ -152,7 +152,7 @@ frame.
 
 <<XX>>=
 XX <- apply(matrix(rnorm(n*p), n, p), 2, cumsum)
-XX <- cbind(seq(1/n, 1, by = 1/n), XX)
+XX <- cbind(seq(0, 1, length.out = n), XX)
 X <- as.data.frame(rbind(X, XX))
 X <- cbind(data.frame(id = rep(c("A", "B"), each = n)), X)
 processX <- continuousProcess(X)
@@ -183,8 +183,8 @@ summary(processX)
 
 The additional, unit specific, information on location is now
 integrated into the data set. Conceptually it looks as if we added a location
-column to the data frame \verb+X+, which contains 2000 repeated values
-of \verb+town+ and 2000 repeated values of \verb+country+. However, 
+column to the data frame \verb+X+, which contains 2001 repeated values
+of \verb+town+ and 2001 repeated values of \verb+country+. However, 
 the data structure does actually not make this wasteful copy of  
 entries, which would be a real burden for large data sets. Instead it
 just maintains the relation between the process data and the unit data
@@ -209,7 +209,7 @@ summary(processX)
 @ 
 
 The summary shows that we have added a column with variable name \verb+point+,
-that the dimensions have changed to $4004 \times 4$, and that the column
+that the dimensions have changed to $4006 \times 4$, and that the column
 providing the summary of points shows the number of points per unit --
 with 3 points observed for unit
 \verb+A+ and 2 points observed for unit \verb+B+. 
@@ -228,9 +228,9 @@ new time points as $0.1100$ is already in the observation grid.
 As with the unit specific data for the \verb+ContinuousProcess+ data
 structure, the \verb+MarkedPointProcess+ data 
 structure does not append a wasteful 0-1 column consisting mostly of 0's.
-The date structure is keeping track of the relations
+The data structure is keeping track of the relations
 between the different types of data and allows us to work with the data
-\emph{as if} the data set is a $4004 \times 4$ dimensional matrix of
+\emph{as if} the data set is a $4006 \times 4$ dimensional matrix of
 observations. 
 
 With equidistant observations for the original data set the inclusion
@@ -270,7 +270,7 @@ possibilities implemented in \verb+ggplot2+, or we can plot a subset
 of the data only using the subsetting functionality described below. 
 
 <<fig=TRUE, eps=FALSE, keep.source=TRUE>>=
-p <- plot(processX) + facet_grid(.~.) + aes(colour = id)
+p <- plot(processX) + facet_null() + aes(colour = id)
 print(p) ##print only needed for Sweave
 @ 
 
@@ -379,17 +379,28 @@ their return values.
 
 The actual implementation is in principle irrelevant to the end
 user. Only the constructors and the interface to access and
-extract the data, as summarized above, are needed. 
+extract the data, as summarized above, are needed. This section gives
+a some more technical details for the interested on the implementation
+and the internal design. 
 
-For the interested, the current implementation relies on an internal
-representation of the data stored in environments pointed to by
-slots in the class. A practical consequence, important for
-working with large data sets, is that the actual data are not copied around if
-copies of the data set are made. Even subsetting do
-not require copying the data as these operations rely on pointers to
-the subset of the full data set instead of actually copying the subset of
-the data. This also allows for an \verb+unsubset+ function that resets
-all pointers and restores the data set to the form of the orginal data set. 
+First, the actual data are regarded as \emph{immutable}. The intention
+was to design a package where the different data elements can be
+initially combined and then later accessed and used, and for which sub data sets
+can be easily selected. The decision was to store the initial data 
+as immutable data objects and then provide extration and
+subsetting functionality. It was never the intention that the data format
+should be suitable for altering entries in the data set, e.g. in
+relation to data clearning.
+
+The current implementation relies on an internal representation of the
+data that are stored in environments pointed to by slots in the objects. A
+practical consequence, important for working with large data sets, is
+that the actual data are not copied around if copies of the data set
+are made. Even subsetting does not require copying the data as these
+operations rely on pointers to the subset of the full data set instead
+of actually copying the subset of the data. This also allows for an
+\verb+unsubset+ function that resets all pointers and restores the
+data set to the form of the orginal data set.
 
 We can investigate the structure of the objects with the two methods
 \verb+object.size+ and \verb+str+. 
@@ -410,7 +421,7 @@ stored in environments is that any subset points to the environments
 with the complete data. Hence, in addition to the pointers in the
 subset, the sum of the sizes of objects in the environments and the
 slots is \emph{larger} for a subset than for the original
-data. In isolatation this is in fact the relevant way to measure the 
+data. In isolatation this is regarded as the relevant way to measure the 
 size of a subset, and if we, for instance, save the object using \verb+save+ 
 then everything in the environments is saved. On the other hand,
 with several objects all being subsets of one data set, the actual

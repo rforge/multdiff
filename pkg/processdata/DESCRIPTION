@@ -1,11 +1,11 @@
 Package: processdata
 Type: Package
 Title: Process Data
-Version: 0.7.8
+Version: 0.7.9
 Date: 2011-03-10
 Author: Niels Richard Hansen <Niels.R.Hansen@math.ku.dk>.
 Maintainer: Niels Richard Hansen <Niels.R.Hansen@math.ku.dk>
-Depends: R (>= 2.12.1), ggplot2, methods
+Depends: R (>= 2.14.1), ggplot2, methods, reshape2
 Suggests: RUnit
 Description: This package implements data structures for stochastic process data, 
 	     which consists of either discretely observed continuous time processes, 

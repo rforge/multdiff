@@ -6,6 +6,8 @@
 \alias{colNames,ContinuousProcess,character-method}
 \alias{getId,ContinuousProcess-method}
 \alias{getId}
+\alias{getEquiDistance}
+\alias{getEquiDistance,ContinuousProcess-method}
 \alias{getPosition}
 \alias{getPosition,ContinuousProcess-method}
 \alias{getTime}
@@ -46,14 +48,18 @@ time processes.
 \section{Slots}{
   \describe{
 
-    \item{\code{numericColNames}:}{a \code{character}.}
+    \item{\code{equiDistance}:}{a \code{numeric}. The interdistance
+      between equidistant sampled observations or 0 indicating
+      non-equidistant observations.}
     
     \item{\code{factorColNames}:}{a \code{character}.}
 
     \item{\code{iSubset}:}{ an \code{integer} vector. References for subsetting.}
 
     \item{\code{jSubset}:}{ an \code{integer} vector. References for subsetting.}
-    
+
+    \item{\code{numericColNames}:}{a \code{character}.}
+
     \item{\code{positionVar}:}{ a \code{character}.}
   }
 }
@@ -72,6 +78,10 @@ time processes.
     \item{getId}{\code{signature(object = "ContinuousProcess")}: Returns
       the identification variable with name in slot \code{idVar}. }
 
+    \item{getEquiDistance}{\code{signature(object = "ContinuousProcess")}: Returns
+      the value of the \code{equiDistance} slot. A value of 0 means that
+      the observations are not equidistant.}
+    
     \item{getPosition}{\code{signature(object = "ContinuousProcess")}: Returns the time/position of the observations. }
 
     \item{getTime}{\code{signature(object = "ContinuousProcess")}: Same
