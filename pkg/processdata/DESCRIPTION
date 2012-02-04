@@ -2,7 +2,7 @@ Package: processdata
 Type: Package
 Title: Process Data
 Version: 0.7.9
-Date: 2011-03-10
+Date: 2012-02-02
 Author: Niels Richard Hansen <Niels.R.Hansen@math.ku.dk>.
 Maintainer: Niels Richard Hansen <Niels.R.Hansen@math.ku.dk>
 Depends: R (>= 2.14.1), ggplot2, methods, reshape2

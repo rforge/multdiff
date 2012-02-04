@@ -15,7 +15,7 @@
 Package: \tab processdata\cr
 Type: \tab Package\cr
 Version: \tab 0.7.8 \cr
-Date: \tab 2011-03-10 \cr
+Date: \tab 2012-02-02 \cr
 License: \tab GPL version 2 or newer \cr
 LazyLoad: \tab yes\cr
 }
@@ -38,7 +38,8 @@ relations between the different types of data and provide a simple
 interface but avoids memory expensive redundancies in the
 representation.
 
-For an introduction to the usage of the package, see the vignette overview.
+For an introduction to the usage of the package, see the
+\emph{Introduction} vignette.
 
 }
 \author{
@@ -59,9 +60,8 @@ CPframe <- data.frame(time = seq(0,1,0.01),
 
 CP <- continuousProcess(CPframe)
 
-\dontrun{plot(CP)
-
-}
+\dontrun{
+plot(CP)}
 
 ### Setting up a simple point process with two marks
 PPframe <- data.frame(
@@ -72,21 +72,19 @@ PPframe <- data.frame(
 PP <- markedPointProcess(PPframe, seq(0,1,0.01))
 
 
-\dontrun{plot(PP)
-
-}
+\dontrun{
+plot(PP)}
 
 ### Combining the two data structures in a single object
 process <- markedPointProcess(PPframe, CPframe)
 
-\dontrun{plot(process)
+\dontrun{
+plot(process)}
 
-}
 
 ## More details in the vignette.
-\dontrun{vignette("overview")
-
-}
+\dontrun{
+vignette("Introduction", package = "processsdata")}
 
 
 }

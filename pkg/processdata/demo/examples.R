@@ -1,6 +1,6 @@
 ################################################################################
 ### Simple examples on the use of classes 'ContinuousProcess',
-### 'markedPointProcess' and 'JumpProcess'. 
+### 'MarkedPointProcess' and 'JumpProcess'. 
 ################################################################################
 
 ## First we load the example data. The data sets are 'contExam' of class
@@ -40,13 +40,14 @@ plot(contExam) + facet_null()
 ## More sophisticated plots can be produced, e.g. different uses of
 ## faceting and grouping.
 
-plot(contExam) + facet_grid(variable ~ .)
+plot(contExam) + facet_grid(variable ~ ., scale = "free_y")
 
 ## To do this depending on unit-specific variables we must specify an
 ## additional argument to the plot such that these variables are
 ## included in the plot data.
 
-plot(contExam, allUnitData = TRUE) + facet_grid(variable ~ gender)
+plot(contExam, allUnitData = TRUE) +
+  facet_grid(variable ~ gender, scale = "free_y")
 
 
 ## Subsetting to non-contiguous subsets of the time axis is
@@ -55,8 +56,7 @@ plot(contExam, allUnitData = TRUE) + facet_grid(variable ~ gender)
 
 plot(subset(contExam, id == "A" & (time < 2 | time > 4)))
 
-## If some of the columns in the data set are factors they are using a
-## differently aesthetic mapping.
+## Factor columns are plotting using a different aesthetic mapping.
 
 plot(factExam)
 
@@ -77,15 +77,15 @@ plot(subset(pointExam, id =="A"))
 
 ## Plotting the point process data only.
 
-plot(pointExam[,-(1:3)])
+plot(pointExam[, -(1:3)])
 
 ## Or a slightly different version.
 
-plot(pointExam[,-(1:3)], y = "id") + facet_null()
+plot(pointExam[, -(1:3)], y = "id") + facet_null()
 
 ## Plotting the continuous process data only.
 
-plot(pointExam[,-c(4,5)])
+plot(pointExam[, -c(4,5)])
 
 ## or 
 

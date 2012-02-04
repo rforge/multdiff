@@ -18,7 +18,7 @@ Two small example data sets.
 \usage{exampleDataFrames}
 
 \format{ The three data frames
-  \code{unitData}, \code{continuousData} and \code{pointData} contains
+  \code{unitData}, \code{continuousData} and \code{pointData} contain
   the data for the \code{contExam} and \code{pointExam} from the
   \code{example} data set, and can be used
   for the contruction of these.

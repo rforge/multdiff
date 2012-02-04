@@ -30,7 +30,7 @@
 
   \item{jumpVar}{ a \code{character}. If not equal to one of the column
     names of \code{getMarkValue(object)} the counting process for
-    \code{mark} is computed. The default value is \code{''}}
+    \code{mark} is computed. The default value is \code{''}.}
   
   \item{result}{ a \code{character}. By default, the function returns an
     object of class \code{JumpProcess}. If \code{result = 'numeric'} it

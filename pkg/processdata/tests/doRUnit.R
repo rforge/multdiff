@@ -1,22 +1,23 @@
-## unit tests will not be done if RUnit is not available
-if(require("RUnit", quietly=TRUE)) {
+### Based on http://rwiki.sciviews.org/doku.php?id=developers:runit
+
+### Unit tests will not be done if RUnit is not available.
+if(require("RUnit", quietly = TRUE)) {
  
   ## --- Setup ---
  
   pkg <- "processdata"
+  ## Path to unit tests for installed package 
+  ## PKG.Rcheck/tests/../PKG/unitTests
+  path <- system.file(package = pkg, "unitTests")
   if(Sys.getenv("RCMDCHECK") == "FALSE") {
-    ## Path to unit tests for standalone running under Makefile (not R CMD check)
-    ## PKG/tests/../inst/unitTests
-    path <- file.path(getwd(), "..", "inst", "unitTests")
-  } else {
-    ## Path to unit tests for R CMD check
-    ## PKG.Rcheck/tests/../PKG/unitTests
-    path <- system.file(package=pkg, "unitTests")
+    ## Path to report for standalone running using make
+    path <- file.path(getwd(), "unitTests")
   }
+  
   cat("\nRunning unit tests\n")
-  print(list(pkg=pkg, getwd=getwd(), pathToUnitTests=path))
+  print(list(pkg = pkg, pathToReport = path))
  
-  library(package=pkg, character.only=TRUE)
+  library(package=pkg, character.only = TRUE)
  
   ## If desired, load the name space to allow testing of private functions
   ## if (is.element(pkg, loadedNamespaces()))
@@ -27,8 +28,8 @@ if(require("RUnit", quietly=TRUE)) {
   ## --- Testing ---
  
   ## Define tests
-  testSuite <- defineTestSuite(name=paste(pkg, "unit testing"),
-                                          dirs=path)
+  testSuite <- defineTestSuite(name = paste(pkg, "unit testing"),
+                                           dirs = path)
   ## Run
   RUnitOp <- getOption("RUnit")
   RUnitOp$verbose <- 0
@@ -50,10 +51,7 @@ if(require("RUnit", quietly=TRUE)) {
  
   ## Report to HTML file
   printHTMLProtocol(tests, fileName=paste(pathReport, ".html", sep=""))
-  if(exists("track")) {
-    printHTML.trackInfo(track$getTrackInfo(), path)
-  }
-
+ 
   ## Return stop() to cause R CMD check stop in case of
   ##  - failures i.e. FALSE to unit tests or
   ##  - errors i.e. R errors
@@ -63,5 +61,5 @@ if(require("RUnit", quietly=TRUE)) {
                ", #R errors: ",  tmp$nErr, ")\n\n", sep=""))
   }
 } else {
-  warning("cannot run unit tests -- package RUnit is not available")
+  warning("Cannot run unit tests -- package RUnit is not available")
 }

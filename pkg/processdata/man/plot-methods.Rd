@@ -31,11 +31,11 @@
 
 \S4method{plot}{ProcessPlotData}(x, ...)
 
-\S4method{getPlotData}{ContinuousProcess}(object, y = '@bottom', nPoints = 200, allUnitData = FALSE, selectPoints = NULL, dropLevels = 1, ...)
+\S4method{getPlotData}{ContinuousProcess}(object, y = '@bottom', nPoints = 200,
+allUnitData = FALSE, selectPoints = NULL, dropLevels = 1, ...)
 
-\S4method{getPlotData}{MarkedPointProcess,character}(object, y =
-'@mark', nPoints = 200, allUnitData = FALSE, allMarkValueData = isTRUE(y
-\%in\% names(getMarkValue(object))), ...)
+\S4method{getPlotData}{MarkedPointProcess,character}(object, y = '@mark', nPoints = 200, allUnitData = FALSE,
+allMarkValueData = isTRUE(y \%in\% names(getMarkValue(object))), ...)
 
 \S4method{getPlotData}{JumpProcess}(object, nPoints = 200, ...)
 }
@@ -189,15 +189,14 @@
 
  \examples{
 ## Examples of plot usages are collected in a demo.
-\dontrun{demo(examples)
-
-}
-## Certain parameters used in the layers for the Tracks can be specified
+\dontrun{
+demo(examples, package = "processdata")}
+## Certain parameters used in the layers for the tracks can be specified
 ## when calling the plot method. 
-\dontrun{data(example)
+\dontrun{
+data(example, package = "processdata")
 plot(pointExam, point_size = 4, point_shape = 15)
-plot(factExam, factor_size = 1, factor_alpha = 0.5)
-}
+plot(factExam, factor_size = 1, factor_alpha = 0.5)}
 }
  
 \keyword{methods}

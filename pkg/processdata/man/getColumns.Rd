@@ -46,7 +46,7 @@
   \code{$} operator or one or multiple columns by index using the
   \code{getColumns} function.
 
-  The drop argument is primarily provided for programming to assure that
+  The drop argument is primarily provided for programming to ensure that
   the function always returns a list.
 
   Single columns can, in addition, be extracted using the bracket \code{[} with

@@ -1,9 +1,0 @@
-RUNIT TEST PROTOCOL -- Fri Sep 17 12:04:11 2010 
-*********************************************** 
-Number of test functions: 2 
-Number of errors: 0 
-Number of failures: 0 
-
- 
-1 Test Suite : 
-processdata unit testing - 2 test functions, 0 errors, 0 failures

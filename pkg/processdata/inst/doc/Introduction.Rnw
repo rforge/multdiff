@@ -28,7 +28,7 @@
 \thispagestyle{empty} 
 
 \begin{center} 
-{\Huge \bf Overview of processdata} \\ \vskip 3mm
+{\Huge \bf Introduction to processdata} \\ \vskip 3mm
 
  Niels Richard Hansen\footnote{Postal address: Department of Mathematical Sciences, University
 of Copenhagen Universitetsparken 5, 2100 Copenhagen \O, Denmark. \\

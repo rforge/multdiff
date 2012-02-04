@@ -76,7 +76,8 @@ continuousData, ..., markVar = 'markType', coarsen = NULL)
 
   The constructor with signature ("data.frame", "data.frame") is a wrapper for
   
-  \code{markedPointProcess(pointData, continuousProcess(continuousData, ...), markVar = 'markType', ...)}. 
+  \code{markedPointProcess(pointData, continuousProcess(continuousData, ...),
+    markVar = 'markType', ...)}. 
 }
 
 \author{
