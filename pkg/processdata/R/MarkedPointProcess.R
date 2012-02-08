@@ -203,6 +203,17 @@ setMethod("markedPointProcess", "vector",
           }
           )
 
+setMethod("markedPointProcess", c("vector", "vector"),
+          function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
+           pointData <- data.frame(pointData)
+           names(pointData) <- positionVar
+           continuousData <- data.frame(continuousData)
+           names(continuousData) <- positionVar
+           callGeneric(pointData = pointData, continuousData,
+                       positionVar = positionVar, idVar = idVar, markVar = markVar, ...)         
+          }
+          )
+
 setMethod("colNames", c("MarkedPointProcess", "missing"),
           function(object, ...) {
             colnames <- c(object@markColNames, object@markValueColNames)
