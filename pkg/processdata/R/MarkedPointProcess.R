@@ -178,8 +178,8 @@ setMethod("markedPointProcess", c("data.frame", "vector"),
           }
           )
 
-setMethod("markedPointProcess", "data.frame",
-          function(pointData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
+setMethod("markedPointProcess", c("data.frame", "missing"),
+          function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
             if(!(positionVar %in% names(pointData)))
               stop(paste("pointData must have a column named", positionVar))
             if(!(idVar %in% names(pointData))) {
@@ -194,22 +194,38 @@ setMethod("markedPointProcess", "data.frame",
           }
           )
 
-setMethod("markedPointProcess", "vector",
-          function(pointData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
+setMethod("markedPointProcess", c("vector", "ANY"),
+          function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
            pointData <- data.frame(pointData)
            names(pointData) <- positionVar
-           callGeneric(pointData = pointData,
+           callGeneric(pointData = pointData, continuousData = continuousData,
                        positionVar = positionVar, idVar = idVar, markVar = markVar, ...)         
           }
           )
 
 setMethod("markedPointProcess", c("vector", "vector"),
+          function (pointData, continuousData, ...) 
+          {
+            cVar <- deparse(substitute(continuousData))
+            .local <- function(pointData, continuousData, positionVar = "time", 
+                               idVar = "id", markVar = "markType", ...) {
+              pointData <- data.frame(pointData)
+              names(pointData) <- positionVar
+              continuousData <- data.frame(continuousData)
+              names(continuousData) <- cVar
+              callGeneric(pointData = pointData, continuousData, positionVar = positionVar, 
+                          idVar = idVar, markVar = markVar, ...)
+            }
+            .local(pointData, continuousData, ...)
+          }
+          )
+          
+
+setMethod("markedPointProcess", c("vector", "data.frame"),
           function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
            pointData <- data.frame(pointData)
            names(pointData) <- positionVar
-           continuousData <- data.frame(continuousData)
-           names(continuousData) <- positionVar
-           callGeneric(pointData = pointData, continuousData,
+           callGeneric(pointData = pointData, continuousData = continuousData,
                        positionVar = positionVar, idVar = idVar, markVar = markVar, ...)         
           }
           )

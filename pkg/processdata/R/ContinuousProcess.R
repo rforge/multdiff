@@ -197,7 +197,7 @@ setMethod("continuousProcess", "list",
                 eqd <- equiDistance
               } 
               for(v in levels(id)) {
-                position[idLevels[[v]]] <- eqd*seq(0, length(idLevels[[v]])-1)
+                position[idLevels[[v]]] <- eqd*c(0L, seq_len(length(idLevels[[v]])-1))
               }
             } else {
               if(is.null(ord)) {
