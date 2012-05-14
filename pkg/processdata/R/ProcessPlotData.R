@@ -50,6 +50,8 @@ setMethod("plot", c("ProcessPlotData", "missing"),
             if(length(addBreaks) > 0) {
               x@breaks <- c(x@breaks, addBreaks) 
               x@labels <- c(x@labels, factorLevels)
+              x@limits <- range(c(x@breaks, x@limits))
+
             }
            
             
@@ -72,7 +74,8 @@ setMethod("plot", c("ProcessPlotData", "missing"),
                 scale_x_continuous(x@positionVar) +
                   scale_y_continuous(breaks = x@breaks,
                                      name = "",
-                                     labels = x@labels)
+                                     labels = x@labels,
+                                     limits = x@limits)
             
             if("value" %in% names(x@continuousPlotData)){
               group <- paste(x@idVar, ":variable", sep = "")

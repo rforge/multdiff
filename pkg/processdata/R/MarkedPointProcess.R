@@ -165,15 +165,18 @@ setMethod("markedPointProcess", c("data.frame", "vector"),
             names(continuousData) <- positionVar
             callGeneric(pointData = pointData,
                         continuousData = continuousData,
-                        positionVar = positionVar, idVar = idVar, markVar = markVar, ...)
+                        positionVar = positionVar, idVar = idVar,
+                        markVar = markVar, ...)
           } else {
-            id <- factor(rep(levels(pointData[, idVar]), each = length(continuousData))) 
+            id <- factor(rep(levels(pointData[, idVar]),
+                             each = length(continuousData))) 
             continuousData <- rep(continuousData, length(levels(pointData[, idVar])))
             continuousData <- data.frame(id, continuousData)
             names(continuousData) <- c(idVar, positionVar)
             callGeneric(pointData = pointData,
                         continuousData = continuousData,
-                        positionVar = positionVar, idVar = idVar, markVar = markVar, ...)
+                        positionVar = positionVar, idVar = idVar,
+                        markVar = markVar, ...)
             }
           }
           )
@@ -222,7 +225,7 @@ setMethod("markedPointProcess", c("vector", "vector"),
           
 
 setMethod("markedPointProcess", c("vector", "data.frame"),
-          function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType',...) {
+          function(pointData, continuousData, positionVar = 'time', idVar = 'id', markVar = 'markType', ...) {
            pointData <- data.frame(pointData)
            names(pointData) <- positionVar
            callGeneric(pointData = pointData, continuousData = continuousData,
@@ -421,7 +424,8 @@ setMethod("getMarkValue", "MarkedPointProcess",
           )
 
 setMethod("getPlotData", "MarkedPointProcess",
-          function(object, y = '@mark', nPoints = 200, allUnitData = FALSE,  allMarkValueData = isTRUE(y %in% names(getMarkValue(object))), ...){
+          function(object, y = '@mark', nPoints = 200, allUnitData = FALSE,
+                   allMarkValueData = isTRUE(y %in% names(getMarkValue(object))), ...){
             if(length(getMarkType(object)) == 0) {
 
               plotData <- callGeneric(object = as(object, "ContinuousProcess"),

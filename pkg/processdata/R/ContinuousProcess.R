@@ -646,6 +646,7 @@ setMethod("getPlotData", "ContinuousProcess",
             if("value" %in% names(continuousPlotData)) {
               limits <- range(continuousPlotData$value)
               breaks <- pretty(limits, 4)
+              limits <- range(c(breaks, limits))
               labels <- as.character(breaks)
             } else {
               limits <- c(-1, 0)
