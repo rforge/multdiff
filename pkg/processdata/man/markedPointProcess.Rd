@@ -8,6 +8,7 @@
 \alias{markedPointProcess,data.frame,ANY-method}
 \alias{markedPointProcess,vector,ANY-method}
 \alias{markedPointProcess,vector,vector-method}
+\alias{markedPointProcess,vector,data.frame-method}
 \alias{markedPointProcess,data.frame-method}
 \alias{markedPointProcess,MarkedPointProcess-method}
 \alias{markedPointProcess,MarkedPointProcess,missing-method}
@@ -18,22 +19,23 @@
   data frame(s).
 }
 \usage{
-\S4method{markedPointProcess}{data.frame,ContinuousProcess}(pointData, continuousData,
-markVar = 'markType', coarsen = NULL, ...)
+\S4method{markedPointProcess}{data.frame,ContinuousProcess}(pointData,
+continuousData, markVar = 'markType', coarsen = NULL, ...)
 
 \S4method{markedPointProcess}{data.frame,data.frame}(pointData, continuousData, ...,
 markVar = 'markType', coarsen = NULL)
 
-\S4method{markedPointProcess}{data.frame,vector}(pointData, continuousData, positionVar = 'time',
- idVar = 'id', markVar = 'markType',  ...)
+\S4method{markedPointProcess}{data.frame,vector}(pointData, continuousData,
+positionVar = 'time', idVar = 'id', markVar = 'markType', ...)
+
+\S4method{markedPointProcess}{vector,data.frame}(pointData, continuousData,
+positionVar = 'time', idVar = 'id', markVar = 'markType', ...)
+
+\S4method{markedPointProcess}{vector,vector}(pointData, continuousData, ...)
 
 
-\S4method{markedPointProcess}{vector,vector}(pointData, continuousData, positionVar = 'time',
- idVar = 'id', markVar = 'markType',  ...)
-
-
-\S4method{markedPointProcess}{data.frame}(pointData, positionVar = 'time', idVar = 'id',
- markVar = 'markType', ...)
+\S4method{markedPointProcess}{data.frame}(pointData, positionVar = 'time',
+idVar = 'id', markVar = 'markType', ...)
 
 \S4method{markedPointProcess}{MarkedPointProcess}(pointData, ...)
 }
