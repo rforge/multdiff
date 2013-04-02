@@ -274,7 +274,7 @@ setMethod("subset", "ProcessData",
               if(x@idVar %in% variables)
                   assign(x@idVar, getId(x), envir = tmpEnv)
               
-              for(v in variables[(variables != x@idVar)]) {
+              for(v in variables[variables %in% colNames(x)]) {
                 assign(v, getColumns(x, v), envir = tmpEnv) 
               }
               r <- eval(e, tmpEnv, parent.frame())

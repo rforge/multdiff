@@ -470,8 +470,7 @@ setMethod("subset", "ContinuousProcess",
                 if(x@positionVar %in% variables) 
                   assign(x@positionVar, getPosition(x), envir = tmpEnv)
               }
-              
-              for(v in variables[!(variables %in% c(x@idVar, x@positionVar))]) {
+              for(v in variables[variables %in% colNames(x)]) {
                 assign(v, getColumns(x, v), envir = tmpEnv) 
               }
               r <- eval(e, tmpEnv, parent.frame())
@@ -596,6 +595,7 @@ setMethod("getPlotData", "ContinuousProcess",
                                            value = paste(patterns$variable,
                                              patterns$value,
                                              sep = "_"))
+              names(factorPlotData)[1] <- object@idVar
                           
               if(isTRUE(allUnitData))            
                 factorPlotData <- cbind(factorPlotData, getUnitData(object)[factorPlotData$id, , drop = FALSE])
@@ -801,10 +801,10 @@ setMethod("show", "ContinuousProcess",
           )
 
 setMethod("summary", "ContinuousProcess",
-           function(object) {
+           function(object, ...) {
              print(object)
              if(dim(object)[1] > 0) 
-               print(summarizeData(object))
+               print(summarizeData(object, ...))
              return(invisible(NULL))
            }
            )

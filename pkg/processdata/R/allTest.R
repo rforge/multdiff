@@ -1,4 +1,4 @@
-allTest  <- function(dirs =  file.path(.path.package(package = "processdata"), "unitTests")) {
+allTest  <- function(dirs =  file.path(path.package(package = "processdata"), "unitTests")) {
   if(!require(RUnit))
     stop("Package 'RUnit' is not installed")
 

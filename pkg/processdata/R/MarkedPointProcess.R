@@ -206,22 +206,22 @@ setMethod("markedPointProcess", c("vector", "ANY"),
           }
           )
 
-setMethod("markedPointProcess", c("vector", "vector"),
-          function (pointData, continuousData, ...) 
-          {
-            cVar <- deparse(substitute(continuousData))
-            .local <- function(pointData, continuousData, positionVar = "time", 
-                               idVar = "id", markVar = "markType", ...) {
-              pointData <- data.frame(pointData)
-              names(pointData) <- positionVar
-              continuousData <- data.frame(continuousData)
-              names(continuousData) <- cVar
-              callGeneric(pointData = pointData, continuousData, positionVar = positionVar, 
-                          idVar = idVar, markVar = markVar, ...)
-            }
-            .local(pointData, continuousData, ...)
-          }
-          )
+## setMethod("markedPointProcess", c("vector", "vector"),
+##           function (pointData, continuousData, ...) 
+##           {
+##             cVar <- deparse(substitute(continuousData))
+##             .local <- function(pointData, continuousData, positionVar = "time", 
+##                                idVar = "id", markVar = "markType", ...) {
+##               pointData <- data.frame(pointData)
+##               names(pointData) <- positionVar
+##               continuousData <- data.frame(continuousData)
+##               names(continuousData) <- cVar
+##               callGeneric(pointData = pointData, continuousData, positionVar = positionVar, 
+##                           idVar = idVar, markVar = markVar, ...)
+##             }
+##             .local(pointData, continuousData, ...)
+##           }
+##           )
           
 
 setMethod("markedPointProcess", c("vector", "data.frame"),
@@ -437,6 +437,8 @@ setMethod("getPlotData", "MarkedPointProcess",
               pointPlotData <- data.frame(id = getPointId(object),
                                           position = getPointPosition(object),
                                           variable = factor(getMarkType(object)))
+
+              names(pointPlotData)[1] <- object@idVar
               
               plotData <- callGeneric(object = as(object, "ContinuousProcess"),
                                       nPoints = nPoints,
@@ -659,20 +661,33 @@ setReplaceMethod("setPointPointer", c("MarkedPointProcess", "ANY"),
           )
 
 setMethod("summarizeData", "MarkedPointProcess",
-          function(object, ....) {
+          function(object, maxsum = 100, ....) {
             summaryById <- callNextMethod()
             if(length(colNames(object, "mark")) > 0) {
               id <- getPointId(object, drop = FALSE)
               splitEntries <- split(seq_along(id), id)
               names(splitEntries) <- NULL
-              pointSummary <- do.call("rbind", lapply(splitEntries, function(e) summary(getMarkType(object, drop = FALSE)[e])))
+              pointSummary <- do.call("rbind", lapply(splitEntries, function(e) table(getMarkType(object, drop = FALSE)[e])))
               colnames(pointSummary) <- paste("#", colnames(pointSummary), sep = "")
+              if (ncol(pointSummary) > maxsum) {
+                drop <- maxsum:ncol(pointSummary)
+                tt <- colSums(pointSummary)
+                o <- order(tt, decreasing = TRUE)
+                pointSummary <- cbind(pointSummary[, o[-drop], drop = FALSE],
+                                      data.frame(Other = rowSums(pointSummary[, o[drop], drop = FALSE]))
+                                      )
+              }
               summaryById <- cbind(summaryById, pointSummary)
               sumVal <- list()
               for(j in colNames(object, "markValue")) {
                 column <- getColumns(object, j)
-                sumVal[[paste("mean(", j ,")", sep ="")]] <- 
-                  sapply(splitEntries, function(e) mean(column[e]))
+                if(is.numeric(column)) {
+                  sumVal[[paste("mean(", j ,")", sep ="")]] <- 
+                    sapply(splitEntries, function(e) mean(column[e]))
+                } else {
+                  sumVal[[paste("most freq. ", j , sep ="")]] <-
+                  sapply(splitEntries, function(e)  names(which.max(table(column[e]))))
+                }
               }
               if(length(sumVal) > 0) 
                 summaryById <- cbind(summaryById,

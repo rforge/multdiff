@@ -14,8 +14,8 @@
 \tabular{ll}{
 Package: \tab processdata\cr
 Type: \tab Package\cr
-Version: \tab 0.8.1 \cr
-Date: \tab 2012-03-07 \cr
+Version: \tab 0.8.2 \cr
+Date: \tab 2013-04-02 \cr
 License: \tab GPL version 2 or newer \cr
 LazyLoad: \tab yes\cr
 }

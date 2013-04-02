@@ -17,13 +17,13 @@ setMethod("plot", c("ProcessPlotData", "missing"),
             value <- factor()
             factorpoint <- numeric()
             
-            if(dim(x@factorPlotData)[1] > 0){
+            if(dim(x@factorPlotData)[1] > 0) {
               value <- x@factorPlotData$value
               factorpoint <- rep(1, length(value))
             }
 
-            if(dim(x@pointPlotData)[1] > 0){
-              if(is.factor(x@pointPlotData$value)){
+            if(dim(x@pointPlotData)[1] > 0) {
+              if(is.factor(x@pointPlotData$value)) {
                 levels <- unique(c(levels(value), levels(x@pointPlotData$value)))
                 value <- factor(c(as.character(value), as.character(x@pointPlotData$value)), levels = levels)
                 factorpoint <- c(factorpoint, rep(2, length(x@pointPlotData$value)))
@@ -53,8 +53,7 @@ setMethod("plot", c("ProcessPlotData", "missing"),
               x@limits <- range(c(x@breaks, x@limits))
 
             }
-           
-            
+                  
             if(length(factorpoint) > 0) {
               if(factorpoint[1] == 1){
                 x@factorPlotData$value <- offset + factorRange*as.numeric(value[factorpoint == 1])/(length(factorLevels) + 1)
@@ -65,21 +64,24 @@ setMethod("plot", c("ProcessPlotData", "missing"),
               }
             }
             
-            facetFormula <- as.formula(paste(x@idVar, "~ ."))
-
             p <- ggplot(x@continuousPlotData, aes_string(x = "position",
                                                          y = "value",
                                                          colour = "variable")) +
-              facet_grid(facetFormula) +
-                scale_x_continuous(x@positionVar) +
-                  scale_y_continuous(breaks = x@breaks,
-                                     name = "",
-                                     labels = x@labels,
-                                     limits = x@limits)
+                scale_x_continuous(x@positionVar) + 
+                guides(color = guide_legend(override.aes = list(alpha = 1)))
+
+            if(length(levels(x@continuousPlotData[, x@idVar])) > 1) {
+              facetFormula <- as.formula(paste(x@idVar, "~ ."))
+              p <- p + facet_grid(facetFormula)
+            }
             
             if("value" %in% names(x@continuousPlotData)){
               group <- paste(x@idVar, ":variable", sep = "")
-              p <- p + geom_line(aes_string(group = group))
+              p <- p + geom_line(aes_string(group = group)) +
+                scale_y_continuous(breaks = x@breaks,
+                                   name = "",
+                                   labels = x@labels,
+                                   limits = x@limits)
             } else {
               p <- p + scale_y_continuous(breaks = x@breaks,
                                           name = "",
@@ -94,11 +96,12 @@ setMethod("plot", c("ProcessPlotData", "missing"),
               
             }
 
-             if(dim(x@pointPlotData)[1] > 0) {
-               p <- p + do.call(geom_point, c(list(data = x@pointPlotData),
-                                                   pointArgs))
+            if(dim(x@pointPlotData)[1] > 0) {
+              p <- p + do.call(geom_point, c(list(data = x@pointPlotData),
+                                         pointArgs))
             }
-
+                                                                         
             return(p)
           }
-          )
+)
+
