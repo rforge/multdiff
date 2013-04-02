@@ -1,10 +1,15 @@
 \name{NEWS}
 \title{processdata News}
 
+\section{Changes in processdata version 0.8.2}{
+  \itemize{
+    \item Mostly internal changes and corrections of bugs.    
+    }
+}
 \section{Changes in processdata version 0.7.5}{
   \subsection{New features}{
     \itemize{
-      \item A vignette, overview, has been written to introduce the
+      \item A vignette, Introduction, has been written to introduce the
       usage of the package, its classes and methods. 
       \item A \code{getColumns} function has been implemented for column
       wise extraction of data, and other methods for data extraction are
