@@ -1,0 +1,13 @@
+Package: smde
+Type: Package
+Title: Sparse Multivariate Differential Equations
+Version: 0.2
+Date: 2011-04-07
+Author: Niels Richard Hansen	
+Maintainer: Niels Richard Hansen <Niels.R.Hansen@math.ku.dk>
+Depends: expm, methods, processdata (>= 0.7.8), Rcpp
+LinkingTo: Rcpp
+Description: Estimation of parameters in multivariate ordinary or stochastic differential
+  equations using l1-regularized nonlinear least squares estimators.
+License: GPL (>= 2)
+LazyLoad: yes
