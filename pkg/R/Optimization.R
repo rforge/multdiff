@@ -1,7 +1,6 @@
-### R code for the Gauss-Newton lasso algorithm. Written to fit sparse 
-### multivariate diffusion models. 
+### R code for optimizing non-convex l1-penalized loss functions.
 ###
-###     Copyright (C) 2013 Niels Richard Hansen.
+###     Copyright (C) 2014 Niels Richard Hansen.
 ###
 ### This program is free software; you can redistribute it and/or modify it
 ### under the terms of the GNU General Public License as published by the
@@ -17,38 +16,56 @@
 ### along with this program; if not, a copy is available at
 ### http://www.r-project.org/Licenses/
 
-##' 
-##' 
-##' 
-##' 
-##' @title Lasso coordinate descent algorithm for nonconvex loss
-##' @param f the least squares loss function
-##' @param gr the gradient 
-
-## A coordinate descent algorithm for nonconvex loss using local quadratic approximations:
-## 'f' computes the least squares loss function
-## 'gr' computes the gradient of the least squares loss
-## 'quad' computes, as a function of an index along the beta vector and
-## beta, the quadratic coefficient for the quadratic approximation to
-## the loss function in the corresponding direction.
-## 'lambda' is a vector of penalty parameters, which will be used in
-## decreasing order, and for each new lambda the parameters estimated
-## for the previous lambda will be used as a warm start.
-## The function returns a list with the vector of lambda values as the first entry 
-## and the estimated beta parameters as a matrix in the second entry. Each column 
-## in the matrix corresponds to one lambda value.
+## Misc. helper functions. Not exported.
 
 penalty <- function(beta, lambda) 
-   sum(lambda * abs(beta))
+  sum(lambda * abs(beta))
 
+##' Optimize l1-penalized loss using a coordinate descent algorithm
+##' 
+##' The function computes a matrix of parameter estimates. Each column corresponds to a
+##' value of the penalty parameter in \code{lambda}. The estimates are computed in decreasing order 
+##' of the penalty parameters, and for each column the previous is used as a warm start.
+##' 
+##' The algorithm relies on iterative optimization of an l1-penalized 
+##' quadratic approximation of the loss using a standard coordinate descent algorithm. An outer backtracking 
+##' step is added to ensure that the algorithm takes descent steps. 
+##' 
+##' This function relies on three auxiliary functions. The loss function \code{f}, its gradient \code{gr}
+##' and a third function, \code{quad}, that computes the coefficient of the quadratic approximation 
+##' for the coordinate wise optimization. 
+##' 
+##' The function returns a list with the vector of lambda values as the first entry 
+##' and the estimated beta parameters as a matrix in the second entry. Each column 
+## in the matrix corresponds to one lambda value.
+##' 
+##' @param beta a \code{numeric}. The vector of initial parameter values
+##' @param f a \code{function}. The loss function. A function of \code{beta}
+##' @param gr a \code{function}. The gradient of the loss. A function of \code{beta}
+##' @param quad a \code{function}. The coordinate wise quadratic approximation term. 
+##'         A function of the coordinate index and \code{beta}
+##' @param lambda a \code{numeric}. A sequence of penalties. Default value \code{NULL} 
+##'         implies a automatic computation of a suitable sequence
+##' @param penalty.factor a \code{numeric}. A vector of weight factors 
+##' @param rho a \code{numeric}. Step length control in the backtracking
+##' @param c a \code{numeric}. Sufficient decrease control in the backtracking
+##' @param reltol a \code{numeric}. Controls the convergence criterion
+##' @param trace a \code{numeric}. Values above 0 prints increasing amounts of trace information.
+##' @return A \code{list} of length 2. The first entry contains \code{lambda} and the second the
+##'         matrix of parameter estimates. Each column in the matrix corresponds to an entry in \code{lambda}.
+##' @export
 
-coordinateDescentQuad <- function(beta, f, gr, quad,
+coordinateDescentQuad <- function(beta, 
+                                  f, 
+                                  gr, 
+                                  quad,
+                                  lambda = 1,
+                                  penalty.factor = rep(1, p),
                                   rho = 0.9,
                                   c = 1e-4,
-                                  lambda = 1,
                                   reltol = sqrt(.Machine$double.eps),
-                                  trace = 0,
-                                  penalty.factor = rep(1, p)) {
+                                  trace = 0
+                                  ) {
   grtol <- reltol ## TODO: Does grtol need to be a different numeric value?
   if(trace > 0)
     message("lambda\tdf\tpenalty\t\tloss+penalty")
