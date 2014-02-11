@@ -12,11 +12,10 @@
 ##' 
 ##'  Estimation of coefficients in multivariate and high dimensional models of dynamic 
 ##'  systems modeled using ordinary or stochastic differential equations. The methods 
-##'  are based on l1-penalized nonlinear least squares to yield. sparse representations.
+##'  are based on l1-penalized nonlinear least squares to yield sparse representations.
 ##'  
 ##' @title Sparse Multivariate Differential Equations
-##' @name smde
-##' @author Niels Richard Hansen \email{Niels.R.Hansen@math.ku.dk}
-##' @keywords package
+##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
 ##' @docType package
+##' @name smde
 NULL
