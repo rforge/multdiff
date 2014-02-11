@@ -1,0 +1,18 @@
+\name{penalty}
+\alias{penalty}
+\title{Weighted l1-norm}
+\usage{
+penalty(beta, lambda)
+}
+\arguments{
+  \item{beta}{a \code{numeric}. The vector.}
+
+  \item{lambda}{a \code{numeric}. Weights.}
+}
+\value{
+a \code{numeric}.
+}
+\description{
+Weighted l1-norm
+}
+

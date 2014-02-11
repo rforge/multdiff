@@ -1,10 +1,10 @@
-\name{coordinateDescentQuad}
-\alias{coordinateDescentQuad}
-\title{l1-penalized coordinate descent}
+\name{coordinateDescentMF}
+\alias{coordinateDescentMF}
+\title{l1-penalized matrix free least squares coordinate descent}
 \usage{
-coordinateDescentQuad(f, gr, quad, p, beta, lambda = NULL, nlambda = 50,
+coordinateDescentMF(f, gr, cp, p, beta, lambda = NULL, nlambda = 50,
   lambda.min.ratio = 0.001, penalty.factor = rep(1, p), rho = 0.9,
-  c = 1e-04, reltol = sqrt(.Machine$double.eps), trace = 0)
+  c = 1e-04, reltol = sqrt(.Machine$double.eps), trace = 0, N = 1000)
 }
 \arguments{
   \item{f}{a \code{function}. The loss function. A function
@@ -13,9 +13,9 @@ coordinateDescentQuad(f, gr, quad, p, beta, lambda = NULL, nlambda = 50,
   \item{gr}{a \code{function}. The gradient of the loss. A
   function of \code{beta}.}
 
-  \item{quad}{a \code{function}. The coordinate wise
-  quadratic approximation term.  A function of the
-  coordinate index and \code{beta}.}
+  \item{cp}{a \code{function}. Computes one column in the
+  cross product of the derivative of the mean value map. A
+  function of the coordinate index and \code{beta}.}
 
   \item{p}{a \code{numeric}. The length of the parameter
   vector.}
@@ -51,35 +51,46 @@ coordinateDescentQuad(f, gr, quad, p, beta, lambda = NULL, nlambda = 50,
 
   \item{trace}{a \code{numeric}. Values above 0 prints
   increasing amounts of trace information.}
+
+  \item{N}{a \code{numeric}. The maximal number of
+  interations in the loops.}
 }
 \value{
-A \code{list} of length 2. The first entry is the sequence
-\code{lambda}, and the second, \code{beta}, is the matrix
-of parameter estimates. Each column in \code{beta}
-corresponds to an entry in \code{lambda}.
+A \code{list} of length 3. The first element is the
+sequence \code{lambda}, and the second, \code{beta}, is the
+matrix of parameter estimates. Each column in \code{beta}
+corresponds to an entry in \code{lambda}. The third element
+is \code{status}, where 0 means convergence, and 1 means
+termination due to maximal number of interations reached
+(for some lambda).
 }
 \description{
-Optimizes an l1-penalized loss using a coordinate wise
-descent algorithm.
+Computes l1-penalized least squares estimates using a
+coordinate wise descent algorithm of Gauss-Newton quadratic
+approximations using a matrix free algorithm.
 }
 \details{
-The function computes a matrix of optimal parameter values.
-Each column corresponds to a value of the penalty parameter
-in \code{lambda}. The estimates are computed in decreasing
+The function computes a matrix of parameter estimates. Each
+column corresponds to a value of the penalty parameter in
+\code{lambda}. The estimates are computed in decreasing
 order of the penalty parameters, and for each column the
 previous is used as a warm start.
 
-The algorithm relies on iterative optimization of an
-l1-penalized quadratic approximation of the loss using a
-standard coordinate wise descent algorithm. A coordinate
-wise backtracking step is added to ensure that the
-algorithm takes descent steps.
+The algorithm relies on iterative optimization of the
+l1-penalized Gauss-Newton quadratic approximation using a
+standard coordinate wise descent algorithm. An outer
+backtracking step is added to ensure that the algorithm
+takes descent steps. This algorithm is matrix free, which
+means that it does not internally operate with the entire
+derivative of the mean value map. Instead, it relies on
+auxiliary functions to compute the loss, the gradient of
+the loss and inner products of columns in the derivative of
+the mean value map.
 
 This function relies on three auxiliary functions. The loss
 function \code{f}, its gradient \code{gr} and a third
-function, \code{quad}, that computes the coefficient of the
-quadratic approximation for the coordinate wise
-optimization.
+function, \code{cp}, that computes the cross product of the
+derivative of the mean value map one column at a time.
 
 The function returns a list with the vector of lambda
 values as the first entry and the estimated beta parameters
