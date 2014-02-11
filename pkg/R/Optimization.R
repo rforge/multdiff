@@ -16,8 +16,14 @@
 ### along with this program; if not, a copy is available at
 ### http://www.r-project.org/Licenses/
 
-## Misc. helper functions. Not exported or documented. ----
+## Misc. helper functions. ----
 
+##' Weighted l1-norm
+##' 
+##' @param beta a \code{numeric}. The vector.
+##' @param lambda a \code{numeric}. Weights.
+##' @return a \code{numeric}. 
+##' @export
 penalty <- function(beta, lambda) 
   sum(lambda * abs(beta))
 
@@ -60,8 +66,9 @@ penalty <- function(beta, lambda)
 ##' @param c a \code{numeric}. Sufficient decrease control in the backtracking.
 ##' @param reltol a \code{numeric}. Controls the convergence criterion.
 ##' @param trace a \code{numeric}. Values above 0 prints increasing amounts of trace information.
-##' @return A \code{list} of length 2. The first entry contains \code{lambda} and the second the
-##'         matrix of parameter estimates. Each column in the matrix corresponds to an entry in \code{lambda}.
+##' @seealso \code{\link{coordinateDescent}}.
+##' @return A \code{list} of length 2. The first entry is the sequence \code{lambda}, and the second, \code{beta}, is the
+##'         matrix of parameter estimates. Each column in \code{beta} corresponds to an entry in \code{lambda}.
 ##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
 ##' @export
 
@@ -213,8 +220,11 @@ coordinateDescentQuad <- function(f,
 ##' @param reltol a \code{numeric}. Controls the convergence criterion.
 ##' @param trace a \code{numeric}. Values above 0 prints increasing amounts of trace information.
 ##' @param N a \code{numeric}. The maximal number of interations in the loops. 
-##' @return A \code{list} of length 2. The first entry contains \code{lambda} and the second the
-##'         matrix of parameter estimates. Each column in the matrix corresponds to an entry in \code{lambda}.
+##' @seealso \code{\link{coordinateDescentMF}}.
+##' @return A \code{list} of length 3. The first element is the sequence \code{lambda}, and the second, \code{beta}, is the
+##'         matrix of parameter estimates. Each column in \code{beta} corresponds to an entry in \code{lambda}. The third
+##'         element is \code{status}, where 0 means convergence, and 1 means termination due to maximal number of interations
+##'         reached (for some lambda). 
 ##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
 ##' @export
 
@@ -234,6 +244,8 @@ coordinateDescent <- function(y,
                               N = 1000) {
   kk <- k <- 1
   eps <- .Machine$double.eps
+  rhomin <- 0.1
+  status <- 0
   if(trace > 0)
     message("lambda\tdf\tpenalty\t\tloss+penalty")
   if(missing(p)) {
@@ -245,7 +257,7 @@ coordinateDescent <- function(y,
   }
   if (is.null(lambda)) {
     grad <- 2 * crossprod(dxi(beta), xi(beta) - y)
-    lambda <- max(abs(grad))
+    lambda <- max(abs(grad) / penalty.factor)
     lambda <- lambda * exp(seq(0, log(lambda.min.ratio), length.out = nlambda))
   } else {
     lambda <- sort(lambda, decreasing = TRUE)
@@ -254,7 +266,6 @@ coordinateDescent <- function(y,
   pIndex <- seq_len(p)
   delta <- numeric(p)
   beta0 <- numeric(p)
-  deltak <- 1
   for(j in seq_along(lambda)){
     if(j > 1) 
       beta[, j] <- beta[, j - 1]
@@ -311,15 +322,16 @@ coordinateDescent <- function(y,
         Xdelta <- X %*% delta  ## This can be done more efficiently due to the zeroes in delta
         sqloss <- sum(Xdelta^2) + 2 * drop(crossprod(r, Xdelta)) + pen
         if(trace >= 4)
-            message("Quadratic loop:", 
-                    signif(lambda[j], 2), 
-                    "\t", sum(abs(beta0) > 0), 
-                    "\t", signif(pen, 2), 
-                    "\t", signif(sqloss, 2))
+          message("Quadratic loop:", 
+                  signif(lambda[j], 2), 
+                  "\t", sum(abs(beta0) > 0), 
+                  "\t", signif(pen, 2), 
+                  "\t", signif(sqloss, 2))
         if(sqoldloss - sqloss < reltol * (abs(sqloss) + reltol))
           break
         if (kk > N) {
-          message("Max iterations exit from inner loop.")
+          if (trace >= 1) 
+            message("Max iterations exit from inner loop.")
           kk <- 1
           break
         }
@@ -328,11 +340,8 @@ coordinateDescent <- function(y,
       ## Backtracking
       oldpen <- penalty(beta[, j], lamb)
       cg <- c * (2 * drop(crossprod(r, Xdelta)) + pen - oldpen)
-#       deltak <- 1
-#       r <- xi(beta0) - y
-#       ell <-  drop(crossprod(r))
-#       loss <- ell + pen
-      beta0 <- beta[, j] + deltak * delta
+      deltak <- 1
+      beta0 <- beta[, j] + delta
       r <- xi(beta0) - y
       ell <-  drop(crossprod(r))
       pen <- penalty(beta0, lamb)
@@ -345,10 +354,8 @@ coordinateDescent <- function(y,
                   "\t", signif(pen, 2), 
                   "\t", signif(loss, 2))
         deltak <- rho * deltak
-        if (deltak < eps) {
-          deltak <- 1
+        if (deltak < eps) 
           break
-        }
         beta0 <- beta[, j] + deltak * delta
         r <- xi(beta0) - y
         ell <-  drop(crossprod(r))
@@ -365,8 +372,10 @@ coordinateDescent <- function(y,
       if(oldloss - loss < reltol * (abs(loss) + reltol))
         break
       if (k > N) {
-        message("Max iterations exit in outer loop.")
+        if (trace >= 1)
+          message("Max iterations exit in outer loop.")
         k <- 1
+        status <- 1
         break
       }
       k <- k + 1
@@ -377,7 +386,7 @@ coordinateDescent <- function(y,
               "\t", signif(pen, 2), "\t", 
               signif(loss, 2))
   }
-  return(list(lambda = lambda, beta = beta))
+  return(list(lambda = lambda, beta = beta, status = status))
 }
 
 ## coordinateDescentMF ----
@@ -425,8 +434,11 @@ coordinateDescent <- function(y,
 ##' @param reltol a \code{numeric}. Controls the convergence criterion.
 ##' @param trace a \code{numeric}. Values above 0 prints increasing amounts of trace information.
 ##' @param N a \code{numeric}. The maximal number of interations in the loops. 
-##' @return A \code{list} of length 2. The first entry contains \code{lambda} and the second the
-##'         matrix of parameter estimates. Each column in the matrix corresponds to an entry in \code{lambda}.
+##' @seealso \code{\link{coordinateDescent}}.
+##' @return A \code{list} of length 3. The first element is the sequence \code{lambda}, and the second, \code{beta}, is the
+##'         matrix of parameter estimates. Each column in \code{beta} corresponds to an entry in \code{lambda}. The third
+##'         element is \code{status}, where 0 means convergence, and 1 means termination due to maximal number of interations
+##'         reached (for some lambda). 
 ##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
 ##' @export
 
@@ -446,6 +458,7 @@ coordinateDescentMF <- function(f,
                                 N = 1000) {
   kk <- k <- 1
   eps <- .Machine$double.eps
+  status <- 0
   if(trace > 0)
     message("lambda\tdf\tpenalty\t\tloss+penalty")
   if(missing(p)) {
@@ -456,7 +469,7 @@ coordinateDescentMF <- function(f,
     beta <- rep(0, times = p)
   }
   if (is.null(lambda)) {
-    lambda <- max(abs(gr(beta)))
+    lambda <- max(abs(gr(beta)) / penalty.factor)
     lambda <- lambda * exp(seq(0, log(lambda.min.ratio), length.out = nlambda))
   } else {
     lambda <- sort(lambda, decreasing = TRUE)
@@ -537,7 +550,8 @@ coordinateDescentMF <- function(f,
         if (sqoldloss - sqloss < reltol * (abs(sqloss) + reltol))
           break
         if (kk > N) {
-          message("Max iterations exit from inner loop.")
+          if (trace >= 1)
+            message("Max iterations exit from inner loop.")
           kk <- 1
           break
         }
@@ -546,7 +560,8 @@ coordinateDescentMF <- function(f,
       ## Backtracking
       oldpen <- penalty(beta[, j], lamb)
       cg <- c * (crossprod(gamma0, delta) + pen - oldpen)
-      beta0 <- beta[, j] + deltak * delta
+      deltak <- 1
+      beta0 <- beta[, j] + delta
       ell <- f(beta0)
       pen <- penalty(beta0, lamb)
       loss <- ell + pen
@@ -558,10 +573,8 @@ coordinateDescentMF <- function(f,
                   "\t", signif(pen, 2), 
                   "\t", signif(loss, 2))
         deltak <- rho * deltak
-        if (deltak < eps) {
-          deltak <- 1
+        if (deltak < eps) 
           break
-        }
         beta0 <- beta[, j] + deltak * delta
         ell <-  f(beta0)
         pen <- penalty(beta0, lamb)
@@ -577,8 +590,10 @@ coordinateDescentMF <- function(f,
       if(oldloss - loss < reltol * (abs(loss) + reltol))
         break
       if (k > N) {
-        message("Max iterations exit in outer loop.")
+        if (trace >= 1)
+          message("Max iterations exit in outer loop.")
         k <- 1
+        status <- 1
         break
       }
       k <- k + 1
@@ -589,5 +604,5 @@ coordinateDescentMF <- function(f,
               "\t", signif(pen, 2), "\t", 
               signif(loss, 2))
   }
-  return(list(lambda = lambda, beta = beta))
+  return(list(lambda = lambda, beta = beta, status = status))
 }
