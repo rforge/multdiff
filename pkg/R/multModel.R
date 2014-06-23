@@ -25,10 +25,11 @@
 ##' @param x a \code{numeric}. A predictor matrix of dimensions d by m.
 ##' @param t a \code{numeric}. A single time step size, or a vector of time step sizes of length m. 
 ##' @param suff a \code{logical}. Should sufficient statistics and the MLE be computed.
-##' @param weights a \code{character}. Specifies parameter weights. Default value \code{'unit'} means 
-##'         that all parameters are weighted equally with a unit weight. The alternative is 'adaptive',
-##'         which means that the parameters are weighted inverse proportionally to the MLE 
-##'         (will only be used if \code{computeSuff = TRUE}). 
+##' @param weights a \code{character} or \code{numeric}. Specifies parameter weights. Default value 
+##'        \code{'unit'} means that all parameters are weighted equally with a unit weight, 
+##'        whereas \code{'adaptive'} means that the parameters are weighted inverse proportionally 
+##'        to the MLE (will only be used if \code{suff = TRUE}). Alternatively, a numeric specifying 
+##'        the individual parameter weights.
 ##' @return an object of class \code{multModel} containing the elements
 ##'  \tabular{ll}{
 ##'  y \tab the d by m data matrix \cr
@@ -37,7 +38,7 @@
 ##'  ss \tab sum of squares (computed if \code{suff = TRUE}) \cr
 ##'  xyt \tab d by d crossproduct of x and y (computed if \code{suff = TRUE}) \cr
 ##'  xxt \tab d by d crossproduct of x (computed if \code{suff = TRUE}) \cr
-##'  B \tab the MLE if \code{computeSuff = TRUE}, and the zero matrix otherwise \cr
+##'  B \tab the MLE if \code{suff = TRUE}, and the zero matrix otherwise \cr
 ##'  w \tab a matrix of parameter weights \cr
 ##'  d \tab dimension of the process \cr
 ##'  m \tab number of d-dimensional observations \cr
@@ -61,7 +62,14 @@ multModel <- function(y, x, t, suff = TRUE, weights = "unit", sigma = 1) {
   if (length(t) > 1)
     stop("Multiple time steps is currently not supported.")
   
-  w <- matrix(1, d, d)
+  if (is.numeric(weights)) {
+    if (length(weights) != d * d)
+      warning("The length of 'weights' does not match the number of parameters. The weights are recycled.")
+    w <- matrix(weights, d, d)
+  } else {
+    w <- matrix(1, d, d)
+  }
+  
   B <- matrix(0, d, d) 
   status <- 0
   msg <- ""
@@ -81,7 +89,7 @@ multModel <- function(y, x, t, suff = TRUE, weights = "unit", sigma = 1) {
         msg <- Btry
       } else {
         B <- Btry
-        if (weights == 'adaptive')
+        if (weights[1] == 'adaptive')
           w <- 1 / (abs(B) + 1e-8)
       }
     }
@@ -269,7 +277,6 @@ dim.multModel <- function(x)
 
 ##' Returns the response 
 ##' 
-##' @S3method response multModel
 ##' @param object an object from which the response is to be obtained.
 ##' @seealso \code{\link{multModel}}
 ##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
@@ -277,12 +284,13 @@ dim.multModel <- function(x)
 response <- function(model, ...)
   UseMethod("response")
 
+##' @rdname response
+##' @export
 response.multModel <- function(model, ...)
   model$y
 
 ##' Prediction for multivariate models
 ##' 
-##' @S3method predict multModel
 ##' @param object an object of class \code{multModel}.
 ##' @param par the parameter vector.
 ##' @seealso \code{\link{predict}}, \code{\link{multModel}}
@@ -295,22 +303,22 @@ predict.multModel <- function(object, par, ...)
 
 ##' Derivative of the predictor 
 ##' 
-##' @S3method dpredict multModel
 ##' @param object an object of class \code{multModel}.
 ##' @param par the parameter vector.
+##' @return An n by p matrix.
 ##' @seealso \code{\link{predict.multModel}}, \code{\link{multModel}}
 ##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
 ##' @export
 dpredict <- function(object, par, ...)
   UseMethod("dpredict")
 
+##' @rdname dpredict
+##' @export
 dpredict.multModel <- function(object, par, ...) 
   dxi(object, par)
 
 ##' Computation of the squared error loss function
 ##' 
-##' @S3method loss default
-##' @S3method loss multModel
 ##' @param object for which the loss is to be computed.
 ##' @param par the parameter vector.
 ##' @return a numeric.
@@ -320,12 +328,15 @@ dpredict.multModel <- function(object, par, ...)
 loss <- function(model, par, ...)
   UseMethod("loss")
 
+##' @export
 loss.default <- function(model, par, ...) {
   y <- response(model)
   pred <- predict(model, par)
   sum((y - pred)^2)
 }
 
+##' @rdname loss
+##' @export
 loss.multModel <- function(model, par = model$B, ...) {
   d <- model$d
   t <- model$t
@@ -347,8 +358,6 @@ loss.multModel <- function(model, par = model$B, ...) {
 
 ##' Computation of the gradient of the loss function
 ##' 
-##' @S3method grad default
-##' @S3method grad multModel
 ##' @param model for which the gradient of the loss is to be computed.
 ##' @param par the parameter vector.
 ##' @param ...
@@ -359,35 +368,41 @@ loss.multModel <- function(model, par = model$B, ...) {
 grad <- function(model, par, ...)
   UseMethod("grad")
 
+##' @export
 grad.default <- function(model, par, ...) {
-  r <- predict(model, par) - response(model)
-  2 * drop(dpredict(model, par) %*% r)
+  r <- as.vector(predict(model, par) - response(model))
+  2 * drop(r %*% dpredict(model, par))
 }
 
-grad.multModel <- function(model, par = object$B, ...) {
+##' @rdname grad
+##' @export
+grad.multModel <- function(model, par = model$B, ...) {
   d <- model$d
   t <- model$t
-  dim(B) <- c(d, d)
+  dim(par) <- c(d, d)
   if (model$suff) {
     ss <- model$ss
     xyt <- model$xyt
     xxt <- model$xxt
-    F <- xyt - xxt %*% t(expm(t * B))
-    grad <- as.vector(- 2 * t * t(expmFrechet(t * B, F, expm = FALSE)$Lexpm))
+    F <- xyt - xxt %*% t(expm(t * par))
+    grad <- as.vector(- 2 * t * t(expmFrechet(t * par, F, expm = FALSE)$Lexpm))
   } else {
     y <- model$y
-    r <- as.vector(xi(model, B) - y)
-    2 * drop(dxi(model, B) %*% r)
+    r <- as.vector(xi(model, par) - y)
+    grad <- 2 * drop(r %*% dxi(model, par))
   }
   grad
 }
 
-##' Computation of effective degrees of freedom.
+##' Effective degrees of freedom.
 ##' 
-##' @S3method dfEff default
-##' @S3method dfEff multModel
-##' @param model for which the degrees of freedom is to be computed.
-##' @param par the parameter vector.
+##' Estimation of the effective degrees of freedom.
+##' 
+##' @param model the model for which the degrees of freedom is to be computed.
+##' @param par a \code{numeric}. The parameter vector.
+##' @param method a \code{character}. The method for estimation of degrees of freedom. The default is to use 
+##'        the method specified by the model. The possible values are \code{'pen'}, \code{'sub'}, 
+##'        \code{'con'} and \code{'nonzero'}.
 ##' @param ...
 ##' @return a numeric.
 ##' @seealso \code{\link{risk}}, \code{\link{riskHat}}
@@ -396,19 +411,22 @@ grad.multModel <- function(model, par = object$B, ...) {
 dfEff <- function(model, par, ...)
   UseMethod("dfEff")
 
+##' @export
 dfEff.default <- function(model, par, ...)
   length(par)
 
-dfEff.multModel <- function(model, par = model$B, method = model$dfMethod, ...) 
+##' @rdname dfEff
+##' @export
+dfEff.multModel <- function(model, par = model$B, method = model$dfMethod, ...)
   switch(method,
          pen = dfPen(model, par),
+         sub = dfPen(model, par),
          con = dfCon(model, par, model$w),
          nonzero = sum(par != 0),
-         NexMethod(model = model, par = par))
+         NextMethod(model = model, par = par))
 
 ##' Computation of the squared error risk.
 ##' 
-##' @S3method risk default
 ##' @param object for which the risk is to be computed.
 ##' @param par0 the best / true parameter vector.
 ##' @param par the estimated parameter vector.
@@ -420,6 +438,7 @@ dfEff.multModel <- function(model, par = model$B, method = model$dfMethod, ...)
 risk <- function(model, par0, par, ...)
   UseMethod("risk")
 
+##' @export
 risk.default <- function(model, par0, par, ...) {
   pred0 <- predict(model, par0)  
   pred <- predict(model, par)
@@ -428,12 +447,10 @@ risk.default <- function(model, par0, par, ...) {
 
 ##' Estimation of the risk.
 ##' 
-##' Computation of an estimate of the risk based on the effective degrees of 
+##' Computation of an estimate of the quadratic risk based on the effective degrees of 
 ##' freedom. The estimate can be used for model selection.
 ##' 
-##' @S3method riskHat default
-##' @S3method riskHat multModel
-##' @param model. The model object for which the risk is to be computed.
+##' @param model the model object for which the risk is to be computed.
 ##' @param par a \code{numeric}. The estimated parameter vector.
 ##' @param df a \code{numeric}. The effective degrees of freedom.
 ##' @param sigma a \code{numeric}. The variance parameter. 
@@ -444,9 +461,12 @@ risk.default <- function(model, par0, par, ...) {
 riskHat <- function(model, par, df, sigma, ...)
   UseMethod("riskHat")
 
+##' @export
 riskHat.default <- function(model, par, df = length(par), sigma = 1, ...) 
   loss(model, par) + sigma^2 * (2 * df - model$n)
 
+##' @rdname riskHat
+##' @export
 riskHat.multModel <- function(model, par = model$B, df = dfEff(model, par), sigma = model$sigma, ...) {
   force(par)
   force(df)
@@ -462,16 +482,26 @@ riskHat.multModel <- function(model, par = model$B, df = dfEff(model, par), sigm
 
 ##' Fitting a multivariate process model
 ##' 
-##' Estimation of parameters in a multivariate process model using l1-penalized squared error loss
-##' and a coordinate wise descent algorithm.
+##' Estimation of parameters in a multivariate process model. The function fits the models by minimizing 
+##' an l1-penalized squared error loss by a coordinate wise descent algorithm. Alternatively, the function 
+##' can do unpenalized least squares forward or backward model search.
 ##' 
-##' @S3method fit multModel
+##' The stepwise model search algorithms as well as the algorithm for l1-panalized estimation return
+##' a sequence of models parametrized by a vector of tuning parameters. For the model search, the tuning 
+##' parameter is the dimension of the model (the number of nonzero entries in the parameter vector). For 
+##' the l1-panalized models, the tuning parameter is a sequence of penalty parameters. 
+##' 
+##' The scope argument specifies the smallest and largest model fitted. They must be nested. The zero weights
+##' of the \code{multModel} object are used to specify the smallest model, if the scope argument does not 
+##' contain a smallest model. 
+##' 
 ##' @param model 
-##' @seealso \code{\link{multModel}}, \code{\link{coordinateDescent}}, \code{\link{coordinateDescentMF}}         
+##' @seealso \code{\link{multModel}}, \code{\link{coordinateDescent}}, \code{\link{coordinateDescentMF}},
+##'         \code{\link{stepOptim}}.
 ##' @return a \code{multModel} object with the additional elements
 ##'  \tabular{ll}{
-##'  lambda \tab the lambda sequence used \cr
-##'  Blambda \tab the corresponding matrix of estimated parameters \cr
+##'  lambda \tab the sequence of tuning parameters \cr
+##'  Blambda \tab the corresponding matrix of estimated parameters. The i'th column corresponds to the i'th tuning parameter. \cr
 ##'  status \tab either 0 (meaning no errors), 1 (convergence), 2 (MLE not computed) or 3 (other errors) 
 ##'               indicating different problems or errors \cr
 ##'  msg \tab errors encountered or other notable conditions
@@ -481,10 +511,14 @@ fit <- function(model, ...)
   UseMethod("fit")
 
 ##' @rdname fit
-##' @param method a \code{character}. The default, \code{"cd"} means a standard coordinate descent algorithm. 
-##'         The alternative, \code{'mf'}, means a matrix free method.
-fit.multModel <- function(model, method = 'cd', ...) {
-  if (method %in% c('cd', 'mf')) {
+##' @param method a \code{character}. The default, \code{"cd"}, means a standard coordinate descent algorithm. 
+##'         while \code{'mf'} means the same coordinate descent algorithm, but using a matrix free 
+##'         implementation. A choice of \code{'forward'} or \code{'backward'} means least squares model search.   
+##' @param scope a \code{numeric} or a \code{list}. See \code{\link{stepOptim}}.
+##' @param ... additional arguments passed on to the optimization algorithm.  
+##' @export        
+fit.multModel <- function(model, method = 'cd', scope = seq(1, model$p), ...) {
+  if (method %in% c('cd', 'mf', 'forward', 'backward')) {
     if (method == 'cd') 
       result <- try(coordinateDescent(y = as.vector(model$y), 
                                       xi = function(B) xi(model, B),
@@ -499,6 +533,29 @@ fit.multModel <- function(model, method = 'cd', ...) {
                                         p = model$p,
                                         penalty.factor = as.vector(model$w),
                                         ...), silent = TRUE)
+    if (method %in% c('forward', 'backward')) {
+      B <- numeric(model$p)
+      f <- function(par, pattern, ...) {
+        B[pattern] <- par
+        loss(model, par = B)
+      }
+      gr <- function(par, pattern, ...) {
+        B[pattern] <- par
+        grad(model, B)[pattern]  
+      }
+      if (!is.list(scope)) {
+        upper <- scope
+        lower <- which(model$w == 0)
+        scope <- list(lower = lower, upper = upper)
+      }
+      result <- try(stepOptim(f = f, 
+                              gr = gr, 
+                              par = model$B, 
+                              direction = method,
+                              scope = scope,
+                              ...), silent = TRUE)
+    }
+      
     if (inherits(result, "try-error")) {
       model$status <- 3
       model$msg <- paste(model$msg, result)
@@ -508,6 +565,8 @@ fit.multModel <- function(model, method = 'cd', ...) {
       model$status <- max(result$status, model$status)
       if (result$status == 1)
         model$msg <- paste(model$msg, "Coordinate descent algorithm reached max interations for some lambda.")
+      if (result$status == 2)
+        model$msg <- paste(model$msg, result$msg)
     }
   } else {     
     warning("Method not available. Model returned without fitting.")

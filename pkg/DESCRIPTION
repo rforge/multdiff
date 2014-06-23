@@ -1,8 +1,8 @@
 Package: smde
 Type: Package
 Title: Sparse Multivariate Differential Equations
-Version: 0.3
-Date: 2014-01-17
+Version: 0.3.1
+Date: 2014-06-23
 Author: Niels Richard Hansen	
 Maintainer: Niels Richard Hansen <Niels.R.Hansen@math.ku.dk>
 Depends: expm, methods, Rcpp

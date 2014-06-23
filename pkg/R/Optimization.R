@@ -257,7 +257,8 @@ coordinateDescent <- function(y,
   }
   if (is.null(lambda)) {
     grad <- 2 * crossprod(dxi(beta), xi(beta) - y)
-    lambda <- max(abs(grad) / penalty.factor)
+    ratio <- abs(grad) / penalty.factor
+    lambda <- max(ratio[ratio < Inf])
     lambda <- lambda * exp(seq(0, log(lambda.min.ratio), length.out = nlambda))
   } else {
     lambda <- sort(lambda, decreasing = TRUE)
@@ -605,4 +606,102 @@ coordinateDescentMF <- function(f,
               signif(loss, 2))
   }
   return(list(lambda = lambda, beta = beta, status = status))
+}
+
+## stepOptim ------------------
+##' Stepwise optimization
+##'
+##' Stepwise estimation for a (sub)model specified by a scope of nonzero parameters.
+##' 
+##' The function implements a generic stepwise optimization algorithm. The optimization is done with \code{optim} using 
+##' the BFGS algorithm. The function searches either forward or backwards in the parameter vector, and in 
+##' each step it chooses among the possible models the best fitting model as measured by the loss function.
+##' 
+##' @param f a (loss) function to minimize
+##' @param gr the gradient of f. 
+##' @param par the initial parameter vector.
+##' @param direction the mode of the stepwise search. The default is \code{'backward'}. 
+##'        The alternative is \code{'forward'}.  
+##' @param scope either a sequence of indices indicating the nonzero entries in the largest model, 
+##'        or a list containing the components \code{lower} and \code{upper}, each being a sequence 
+##'        of indices indicating the nonzero entries in the smallest and the largest model, respectively.
+##' @return A \code{list} of length 4. The first element, \code{lambda}, is the sequence of dimensions, 
+##'         and the second, \code{beta}, is the matrix of parameter estimates. Each column in \code{beta} 
+##'         corresponds to an entry in \code{lambda}. The third element is \code{status}, where 0 means 
+##'         convergence, and 4 indicates convergence problems. The last element \code{msg} gives details 
+##'         on convergence status.
+##' @author Niels Richard Hansen \email{Niels.R.Hansen@@math.ku.dk}
+##' @export
+
+stepOptim <- function(f, gr, par, direction = 'backward', scope, ...) {
+  status <- 0
+  msg <- ""
+  if (is.list(scope)) {
+    upper <- sort(scope$upper)
+    lower <- sort(scope$lower)
+  } else {
+    upper <- sort(scope)
+    lower <- c()
+  }
+  if (any(upper > length(par) || any(upper < 1) || any(!lower %in% upper)))
+    stop("The 'scope' argument is invalid.")
+  pmax <- length(upper)
+  pmin <- length(lower)
+  if (pmax == pmin) {
+    lambda <- pmax
+  } else {
+    lambda <- seq(max(pmin, 1), pmax, 1)
+  }
+  beta <- matrix(0, length(par), length(lambda))
+  if (direction == 'backward') {
+    pattern <- upper
+    tmp <- optim(par[pattern], f, gr, method = "BFGS", pattern = pattern)  
+    beta[pattern, length(lambda)] <- tmp$par
+    for (k in rev(seq_along(lambda))[-1]) {
+      search <- which(!pattern %in% lower)
+      tmp <- vector("list", length(search))
+      for (i in seq_along(search)) {
+        pat <- pattern[-search[i]]
+        tmp[[i]] <- optim(beta[pat, k + 1], f, gr, method = "BFGS", pattern = pat)    
+        if (tmp[[i]]$convergence != 0) {
+          status <- 2
+          msg <- paste(msg, "Convergence error", tmp[[i]]$convergence, "occurred")
+        }
+      }
+      imin <- which.min(sapply(tmp, function(m) m$value))
+      pattern <- pattern[-search[imin]]
+      beta[pattern, k] <- tmp[[imin]]$par
+    }
+  }
+  if (direction == 'forward') {
+    pattern <- lower
+    if (length(pattern) > 0) {
+      tmp <- optim(par[pattern], f, gr, method = "BFGS", pattern = pattern)  
+      beta[pattern, 1] <- tmp$par
+      kk <- seq_along(lambda)[-1]
+    } else {
+      kk <- seq_along(lambda)
+    }
+    for (k in kk) {
+        search <- which(!upper %in% pattern)
+        tmp <- vector("list", length(search))
+        for (i in seq_along(search)) {
+          pat <- sort(c(pattern, upper[search[i]]))
+          if (k == 1) {
+            par0 <- par[pat]
+          } else {
+            par0 <- beta[pat, k - 1]
+          }
+          tmp[[i]] <- optim(par0, f, gr, method = "BFGS", pattern = pat)    
+          if (tmp[[i]]$convergence != 0) {
+            status <- 4
+            msg <- paste(msg, "Convergence error", tmp[[i]]$convergence, "occurred.")
+          }
+        }
+        imin <- which.min(sapply(tmp, function(m) m$value))
+        pattern <- sort(c(pattern, upper[search[imin]]))
+        beta[pattern, k] <- tmp[[imin]]$par
+    }
+  }
+  list(lambda = lambda, beta = beta, status = status, msg = msg)
 }
