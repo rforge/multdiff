@@ -39,7 +39,7 @@
 ##'   Sys.sleep(0.1)
 ##'   pb$up()
 ##' }
-##' pb$kill()  ## Remeber this to clean up. Removes files and directories used.
+##' pb$kill()  ## Remember this to clean up. Removes files and directories used.
 ##' rm(pb)
 ##' 
 ##' \dontrun{
@@ -50,7 +50,7 @@
 ##'   pb$up()
 ##'   }
 ##' )
-##' pb$kill()  ## Remeber this to clean up. Removes files and directories used.
+##' pb$kill()  ## Remember this to clean up. Removes files and directories used.
 ##' rm(pb)}
 ##' @export           
 
