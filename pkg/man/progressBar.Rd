@@ -56,7 +56,7 @@ for(i in 1:100) {
   Sys.sleep(0.1)
   pb$up()
 }
-pb$kill()  ## Remeber this to clean up. Removes files and directories used.
+pb$kill()  ## Remember this to clean up. Removes files and directories used.
 rm(pb)
 
 \dontrun{
@@ -67,7 +67,7 @@ tmp <- mclapply(1:100, function(i) {
   pb$up()
   }
 )
-pb$kill()  ## Remeber this to clean up. Removes files and directories used.
+pb$kill()  ## Remember this to clean up. Removes files and directories used.
 rm(pb)}
 }
 
